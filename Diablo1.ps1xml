@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuration>
+<ViewDefinitions>
+	<View>
+		<Name>DiabloItem</Name>
+		<ViewSelectedBy>
+			<TypeName>Deserialized.Serpen.Diablo.Item</TypeName>
+			<TypeName>Serpen.Diablo.Item</TypeName>
+		</ViewSelectedBy>
+
+		<TableControl>
+			<TableHeaders>
+				<TableColumnHeader>
+					<Label>Class</Label>
+					<Width>12</Width>
+				</TableColumnHeader>
+				<TableColumnHeader>
+					<Label>Name</Label>
+					<Width>40</Width>
+				</TableColumnHeader>
+				<TableColumnHeader>
+					<Label>Quality</Label>
+					<Width>10</Width>
+				</TableColumnHeader>
+			</TableHeaders>
+			<TableRowEntries>
+				<TableRowEntry>
+					<TableColumnItems>
+						<TableColumnItem>
+							<PropertyName>Class</PropertyName>
+						</TableColumnItem>
+						<TableColumnItem>
+							<PropertyName>IdentifiedName</PropertyName>
+						</TableColumnItem>
+						<TableColumnItem>
+							<PropertyName>Quality</PropertyName>
+						</TableColumnItem>
+					</TableColumnItems>
+				</TableRowEntry>
+			</TableRowEntries>
+		</TableControl>
+		
+		<!--
+		<ListControl>
+			<ListEntries>
+				<ListEntry>
+					<ListItems>
+						<ListItem><PropertyName>IdentifiedName</PropertyName></ListItem>
+						<ListItem><PropertyName>UnIdentifiedName</PropertyName></ListItem>
+						<ListItem><PropertyName>ID</PropertyName></ListItem>
+						<ListItem><PropertyName>Class</PropertyName></ListItem>
+						<ListItem><PropertyName>Quality</PropertyName></ListItem>
+						<ListItem><PropertyName>equip_type</PropertyName></ListItem>
+						<ListItem><PropertyName>BasePrice</PropertyName></ListItem>
+						<ListItem><PropertyName>IdentifiedPrice</PropertyName></ListItem>
+						<ListItem><PropertyName>DamageFrom</PropertyName></ListItem>
+						<ListItem><PropertyName>DamageTo</PropertyName></ListItem>
+						<ListItem><PropertyName>Amor</PropertyName></ListItem>
+						<ListItem><PropertyName>Amor</PropertyName></ListItem>
+					</ListItems>
+				</ListEntry>
+			</ListEntries>
+		</ListControl>
+		-->
+	</View>		
+</ViewDefinitions>
+</Configuration>
