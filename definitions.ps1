@@ -1,4 +1,4 @@
-﻿#definitions.ps1
+#definitions.ps1
 
 $VersionStringMatch = @{
 [int]0x499b28 = [Version]'1.0.0.0'
@@ -9,6 +9,8 @@ $VersionStringMatch = @{
 [int]0x48F5C8 = [Version]'1.0.7.0'
 [int]0x49052c = [Version]'1.0.8.0'
 [int]0x48e58c = [Version]'1.0.9.0'
+#[int]0x48e58c = [Version]'1.0.9.1'
+[int]0x4A08C0 = [Version]"2.0.1.0"
 } #end hash
 
 $start_offsetV100 = 0x5330E0
@@ -19,8 +21,14 @@ $start_offsetV105 = 0x6A8860
 $start_offsetV107 = 0x6877A0
 $start_offsetV108 = 0x6884C0
 $start_offsetV109 = 0x686470
+$start_offsetV201 = 0x1030070
 
 # OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS 
+
+$PLAYERS_COUNT_OFFSET = -(0xDE44)
+
+$PLAYER_OFFSET = 0x54D8
+
 $PLAYERNAME_OFFSET = 0x118
 $PLAYERNAME_LENGTH = 15
 
@@ -30,7 +38,6 @@ $TYPE_OFFSET = 0x138
 
 $POS_X_OFFSET = 0x10
 $POS_Y_OFFSET = 0x14
-
 
 $SPELLFLAGS_OFFSET = 0xBD+23+12 # 0xE0
 $SPELLS_OFFSET = 0x9A
@@ -47,7 +54,7 @@ $GOLD_OFFSET = 0x1A4
 
 $WAYPOINT_OFFSET = -(0x5450)
 
-$TP_OFFSET = 0x10308
+$TP_OFFSET = -(0x10308)
 
 $MONSTER_OFFSET = 0x39788
 
