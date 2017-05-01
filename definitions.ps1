@@ -32,6 +32,10 @@ $PLAYER_OFFSET = 0x54D8
 $PLAYERNAME_OFFSET = 0x118
 $PLAYERNAME_LENGTH = 15
 
+$DIFFICULT_OFFSET = -(0xde34)
+
+$POSSIBLE_IS_ALIVE_OFFSET = 0x115
+
 $DUNGENON_OFFSET = 0xC
 
 $TYPE_OFFSET = 0x138
@@ -64,6 +68,11 @@ $INV_BACKPACK_OFFSET = 0xD64
 
 $BELT_OFFSET = 0x4701+15 # 0xDE0
 
+$QUESTS_OFFSET = 0x158c6
+$BUTCHER = 0x69BDA2
+$TAVERN=   0x69BDBA
+$KINGLEOR= 0x69BE32
+
 ## item ##
 $ITM_IDENTIFIED_OFFSET = 0x38
 
@@ -87,11 +96,14 @@ $ITM_ARMOR_OFFSET = 0xD4
 $ITM_BASEPRICE_OFFSET = 0xC4
 
 #Resources Resources Resources Resources Resources Resources Resources Resources 
-$TYPE_ENUM = 'Warrior','Rogue','Sorcerer'
+$TYPE_ENUM = 'Warrior','Rogue','Sorceror'
 $STAT_ENUM = "Strength","Magic","Dextery","Vitality"
 $DUNGEONTYPES_ENUM = 'Town','Cathedral','Catacombs','Caves','Hell'
 $QUESTREGION_ENUM = 'None','Skeleton King','Bone Chamber','Maze','Poisoned Water Supply','Archbishop Lazarus Lair'
 $Monster_ENUM = 'zombie','Ghoul','zombie','zombie','falspear','falspear','Devil Kin','falspear','Skeleton','Corpse Axe','Burning Dead','skelaxe','falsword','Carver','Devil Kin','falsword','scav','scav','scav','scav','Skeleton','Corpse Bow','Burning Dead','Horror','Skeleton King','skelsd','Burning Dead Captain','skelsd','tsneak','sneak','sneak','sneak','sneak','goatlord','Flesh King','goatmace','goatmace','goatmace','Fiend','Blink','bat','bat','goatbow','goatbow','goatbow','goatbow','acid','acid','acid','acid','sking','fatc','Overlord','fat','fat','fat','worm','worm','worm','worm','magma','magma','magma','magma','rhino','rhino','rhino','rhino','demskel','thin','thin','thin','fireman','fireman','fireman','fireman','thin','thin','thin','thin','bigfall','gargoyle','gargoyle','gargoyle','gargoyle','mega','mega','mega','Balrog','Cave Viper','snake','snake','Azure Drake','black','Doom Guard','Steel Lord','black','unrav','unrav','unrav','unrav','Succubus','succ','succ','succ','mage','mage','mage','mage','golem','diablo','darkmage'
+$DIFFICULTY_ENUM = 'Normal','Nightmare','Hell'
+$QUEST_ENUM = 'THE_MAGIC_ROCK','BLACK_MUSHROOM','GHARBAD_THE_WEAK','ZHAR_THE_MAD','LACHDANAN','DIABLO','THE_BUTCHER','OGDENS_SIGN','HALLS_OF_THE_BLIND','VALOR','ANVIL_OF_FURY','WARLORD_OF_BLOOD','THE_CURSE_OF_KING_LEORIC','POISONED_WATER_SUPPLY','THE_CHAMBER_OF_BONE','ARCHBISHOP_LAZARUS'
+$QUEST_STATE= 'inactive','waiting', 'active', 'accomplished'
 
 [String[]]$SPELL_NAMES = 'Firebolt','healing','light','flash','identify','firewall','Town Portal','stone curse','infrasion','phasing','mana shield','fireball','guardian','chain lightning','flame wave','doom serpents','blood ritual','nova','invisiblity','inferno','golem','blood boil','teleport','apocalypse', 'etheralize','item repair','staff rechare','trap disarm','elemental','chargedbolt','holybolt','resurrect','telekinesis','heal other','blood star','bone spirit'
 $SPELLBOX_X = 1,1,2,2,0,2,2,2,0,3,3,3,3,3,3,0,0,4,0,1,4,0,4,4,0,1,1,1,3,1,1,2,2,1,4,4

@@ -69,13 +69,13 @@ FormatsToProcess = 'diablo1.ps1xml'
 # NestedModules = @()
 
 # Aus diesem Modul zu exportierende Funktionen. Um optimale Leistung zu erzielen, verwenden Sie keine Platzhalter und löschen den Eintrag nicht. Verwenden Sie ein leeres Array, wenn keine zu exportierenden Funktionen vorhanden sind.
-FunctionsToExport = 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-DiabloSession','Export-DiabloItem','Get-DiabloBelt','Get-DiabloCharacterPosition','Get-DiabloCharacterStats','Get-DiabloEntrances','Get-DiabloInventory','Get-DiabloMonsterKills','Get-DiabloPlayers','Get-DiabloRucksack','Get-DiabloSpell','Get-DiabloStoreItems','Get-DiabloTownPortal','Get-DiabloVersion','Invoke-DiabloIdentifyItem','Invoke-DiabloRepairItem','Set-DiabloEntrances','Set-DiabloItemProperty','Set-DiabloPoints','Set-DiabloSpell'
+FunctionsToExport = 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-DiabloSession','Export-DiabloItem','Get-DiabloBelt','Get-DiabloCharacterPosition','Get-DiabloCharacterStats','Get-DiabloDifficulty','Get-DiabloEntrances','Get-DiabloInventory','Get-DiabloMonsterKills','Get-DiabloPlayers','Get-DiabloQuests', 'Get-DiabloRucksack','Get-DiabloSpell','Get-DiabloStoreItems','Get-DiabloTownPortal','Get-DiabloVersion','Invoke-DiabloIdentifyItem','Invoke-DiabloRepairItem','Set-DiabloDifficulty', 'Set-DiabloEntrances','Set-DiabloItemProperty','Set-DiabloPoints','Set-DiabloSpell'
 
 # Aus diesem Modul zu exportierende Cmdlets. Um optimale Leistung zu erzielen, verwenden Sie keine Platzhalter und löschen den Eintrag nicht. Verwenden Sie ein leeres Array, wenn keine zu exportierenden Cmdlets vorhanden sind.
-CmdletsToExport = 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-DiabloSession','Export-DiabloItem','Get-DiabloBelt','Get-DiabloCharacterPosition','Get-DiabloCharacterStats','Get-DiabloEntrances','Get-DiabloInventory','Get-DiabloMonsterKills','Get-DiabloPlayers','Get-DiabloRucksack','Get-DiabloSpell','Get-DiabloStoreItems','Get-DiabloTownPortal','Get-DiabloVersion','Invoke-DiabloIdentifyItem','Invoke-DiabloRepairItem','Set-DiabloEntrances','Set-DiabloItemProperty','Set-DiabloPoints','Set-DiabloSpell'
+CmdletsToExport = 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-DiabloSession','Export-DiabloItem','Get-DiabloBelt','Get-DiabloCharacterPosition','Get-DiabloCharacterStats','Get-DiabloDifficulty','Get-DiabloEntrances','Get-DiabloInventory','Get-DiabloMonsterKills','Get-DiabloPlayers','Get-DiabloQuests', 'Get-DiabloRucksack','Get-DiabloSpell','Get-DiabloStoreItems','Get-DiabloTownPortal','Get-DiabloVersion','Invoke-DiabloIdentifyItem','Invoke-DiabloRepairItem','Set-DiabloDifficulty', 'Set-DiabloEntrances','Set-DiabloItemProperty','Set-DiabloPoints','Set-DiabloSpell'
 
 # Die aus diesem Modul zu exportierenden Variablen
-VariablesToExport = '*'
+#VariablesToExport = '*'
 
 # Aus diesem Modul zu exportierende Aliase. Um optimale Leistung zu erzielen, verwenden Sie keine Platzhalter und löschen den Eintrag nicht. Verwenden Sie ein leeres Array, wenn keine zu exportierenden Aliase vorhanden sind.
 AliasesToExport = @()

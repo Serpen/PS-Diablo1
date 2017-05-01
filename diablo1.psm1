@@ -1,9 +1,8 @@
 $PSScriptRoot2 = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 Add-Type -path $PSScriptRoot2\Serpen.Wrapper.ProcessMemory.cs
-Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Spell {}}"
-Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Item {}}"
-Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Item {}}"
+Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Spell {}}" -IgnoreWarnings
+Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Item {}}" -IgnoreWarnings
 
 function Get-DiabloVersion {
 [CmdLetBinding()]
@@ -102,6 +101,7 @@ function DisConnect-DiabloSession {
 param ($DiabloSession)
     [Serpen.Wrapper.ProcessMemory]::CloseHandle($DiabloSession.ProcessMemoryHandle) | Out-Null
     $DiabloSession = $null
+    #$global:DiabloSession = $null
     
 }
 
@@ -121,6 +121,11 @@ function Get-DiabloPlayers {
 param (
     $DiabloSession = $Global:DiabloSession
 )
+    
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
 
     [int]$read = 0
     $Buffer = [array]::CreateInstance([byte],$PLAYERNAME_LENGTH)
@@ -136,11 +141,69 @@ param (
 
 }
 
+function Get-DiabloDifficulty {
+param (
+    $DiabloSession = $Global:DiabloSession
+)
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    $buffer = [array]::CreateInstance([byte], 1)
+    [int]$read = 0
+
+    if ($PSVersionTable.PSVersion.Major -gt 2) {
+        $Properties = [ordered]@{}
+    } else {
+        $Properties = @{}
+    }
+
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$DIFFICULT_OFFSET,$buffer,$buffer.length,[ref]$read) | Out-Null
+    Write-Debug ($buffer -join ' ')
+
+    $DIFFICULTY_ENUM[$Buffer[0]]
+}
+
+function Set-DiabloDifficulty {
+param (
+    [Parameter(Mandatory=$true)][ValidateSet('Normal','Nightmare','Hell')][String]$Difficulty,
+    $DiabloSession = $Global:DiabloSession
+)
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    $buffer = [array]::CreateInstance([byte], 1)
+    [int]$read = 1
+
+    [byte]$DifficultyIndex = 0
+    switch ($Difficulty) {
+        'Normal' {$DifficultyIndex = 0}
+        'Nightmare' {$DifficultyIndex = 1}
+        'Hell' {$DifficultyIndex = 2}
+    }
+
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$DIFFICULT_OFFSET,$DifficultyIndex,1,[ref]$read)) {
+        Write-Error 'Could not set DiabloEntrances'
+    } else {
+        Write-Warning 'Takes affect in next game'
+    }
+}
+
 function Get-DiabloCharacterStats {
 param (
     [ValidateRange(1,4)][byte]$PlayerIndex = 1,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     $buffer = [array]::CreateInstance([byte], 0x200)
     [int]$read = 0
 
@@ -161,6 +224,7 @@ param (
 
     $Properties.Add('Name', (ConvertFrom-DiabloString -bytes $buffer $PLAYERNAME_OFFSET $PLAYERNAME_LENGTH))
     $Properties.Add('Type', $TYPE_ENUM[$buffer[$TYPE_OFFSET]])
+    $Properties.Add('Alive', ![bool]$buffer[$POSSIBLE_IS_ALIVE_OFFSET])
 
     for ([int]$i = 0; $i -lt $STAT_ENUM.Length; $i++) {
         $Properties.Add("$($STAT_ENUM[$i]) Base", $buffer[$STAT_OFFSET+$i*8])
@@ -177,6 +241,19 @@ param (
 
         $Properties.Add('Gold', ([System.BitConverter]::ToInt32($buffer, $GOLD_OFFSET)))
     }
+
+    switch ($buffer[$TYPE_OFFSET]) {
+        0 {$Properties.Add('Mana Base', 1*$buffer[$STAT_OFFSET+8]+1*$buffer[$LVL_OFFSET]-1)}
+        1 {$Properties.Add('Mana Base', 1*$buffer[$STAT_OFFSET+8]+2*$buffer[$LVL_OFFSET]+5)}
+        2 {$Properties.Add('Mana Base', 2*$buffer[$STAT_OFFSET+8]+2*$buffer[$LVL_OFFSET]-2)}
+    }
+
+    switch ($buffer[$TYPE_OFFSET]) {
+        0 {$Properties.Add('Life Base', 2*$buffer[$STAT_OFFSET+24]+2*$buffer[$LVL_OFFSET]+18)}
+        1 {$Properties.Add('Life Base', 1*$buffer[$STAT_OFFSET+24]+2*$buffer[$LVL_OFFSET]+23)}
+        2 {$Properties.Add('Life Base', 1*$buffer[$STAT_OFFSET+24]+1*$buffer[$LVL_OFFSET]+9)}
+    }
+
     $char = New-Object PSObject -Property $Properties
     $char.psobject.TypeNames.Insert(0,'Serpen.Diablo.CharacterStats')
     $char
@@ -187,6 +264,11 @@ param (
     [ValidateSet('Wirt','Griswold Premium','Griswold Basic','Pepin','Adria')][String]$Store,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     switch ($Store) {
         'Wirt' {$curSO = $DiabloSession.StartOffset + 0x18CA8; $count = 1}
         'Griswold Premium' {$curSO = $DiabloSession.StartOffset + 0x18E20; $count = 6}
@@ -211,6 +293,11 @@ param (
     [ValidateRange(1,4)][byte]$PlayerIndex = 1,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
 
     $buffer = [array]::CreateInstance([byte], 10)
     [int]$read = 0
@@ -251,6 +338,11 @@ param (
     $DiabloSession = $Global:DiabloSession
 )
 
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     $buffer = [array]::CreateInstance([byte], 1)
     [int]$read = 0
 
@@ -280,6 +372,11 @@ param (
     [Switch]$Hell,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     $buffer = [array]::CreateInstance([byte], 1)
     [int]$read = 0
 
@@ -297,6 +394,11 @@ param (
     [ValidateRange(1,4)][byte]$PlayerIndex = 1,
     $DiabloSession = $Global:DiabloSession
 )
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
 
     $buffer = [array]::CreateInstance([byte], 0x20)
     [int]$read = 0
@@ -350,6 +452,11 @@ param (
     [byte]$DurabilityTo,
     $DiabloSession = $Global:DiabloSession
 )
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
 
     [int]$read = 0
 
@@ -414,6 +521,11 @@ param (
     [Parameter(Mandatory=$true)][Object]$Item,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     [int]$read = 0
 
     if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$item._Offset + 0x38,1,1,[ref]$read)) {
@@ -426,6 +538,11 @@ param (
     [Parameter(Mandatory=$true)][Object]$Item,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     [int]$read = 0
 
     if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$item._Offset + $ITM_DUR_FROM_OFFSET,$item.DurTo,1,[ref]$read)) {
@@ -438,6 +555,11 @@ param (
     [Parameter(Mandatory=$true)][byte]$Points,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     [int]$read = 0
 
     if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$LEVELUP_OFFSET,$Points,1,[ref]$read)) {
@@ -452,6 +574,11 @@ param (
     [String[]]$Spell,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
 
     $buffer = [array]::CreateInstance([byte], $SPELL_NAMES.Length-1+4)
     [int]$read = 0
@@ -503,6 +630,11 @@ param (
     $DiabloSession = $Global:DiabloSession
 )
 begin {
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     $buffer = [array]::CreateInstance([byte], 4)
     [int]$read = 0
 }
@@ -542,11 +674,44 @@ process {
 
 #function Import-DiabloItem {}
 
+function Get-DiabloQuests {
+param (
+    $DiabloSession = $Global:DiabloSession
+)
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    $buffer = [array]::CreateInstance([byte], 0x18*16)
+    [int]$read = 0
+
+    if ($PSVersionTable.PSVersion.Major -gt 2) {
+        $Properties = [ordered]@{}
+    } else {
+        $Properties = @{}
+    }
+
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,0x69BD10,$buffer,$buffer.length,[ref]$read) | Out-Null
+    Write-Debug ($buffer -join ' ')
+
+    for ([int]$i=0; $i -lt 16; $i++) {
+        New-Object PSobject -Property @{Level=$buffer[$i*0x18]; Name=$QUEST_ENUM[$buffer[1+$i*0x18]]; Active=$QUEST_STATE[$buffer[2+$i*0x18]]; QuestLevel=$buffer[12+$i*0x18]}
+    }
+}
+
+
 function Get-DiabloMonsterKills {
 param (
     [String[]]$Monster,
     $DiabloSession = $Global:DiabloSession
 )
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
 
     $buffer = [array]::CreateInstance([byte], ($Monster_ENUM.Length)*4)
     [int]$read = 0
@@ -597,6 +762,11 @@ function Get-DiabloInventory {
 param (
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     for ([int]$i = 0; $i -lt 7; $i++) {
         $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset ($DiabloSession.StartOffset + $INV_OFFSET +($i*$ITEM_SIZE))
         if ($itm.class -ne 'invalid') {
@@ -611,6 +781,11 @@ function Get-DiabloBelt {
 param (
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     for ([int]$i = 0; $i -lt 8; $i++) {
         $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset ($DiabloSession.StartOffset + $BELT_OFFSET +($i*$ITEM_SIZE))
         if ($itm.class -ne 'invalid') {
@@ -623,6 +798,11 @@ function Get-DiabloRucksack {
 param (
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     for ([int]$i = 0; $i -lt 18; $i++) {
         $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset ($DiabloSession.StartOffset + $INV_BACKPACK_OFFSET +($i*$ITEM_SIZE))
         if ($itm.class -ne 'invalid') {
@@ -878,6 +1058,11 @@ param (
     [String]$File,
     $DiabloSession = $Global:DiabloSession
 )
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
     [int]$read = 0
     $buffer = [array]::CreateInstance([byte], $ITEM_SIZE)
 
