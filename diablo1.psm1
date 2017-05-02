@@ -4,6 +4,8 @@ Add-Type -path $PSScriptRoot2\Serpen.Wrapper.ProcessMemory.cs
 Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Spell {}}" -IgnoreWarnings
 Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Item {}}" -IgnoreWarnings
 
+. "$PSScriptRoot2\definitions.ps1"
+
 function Get-DiabloVersion {
 [CmdLetBinding()]
 param (
@@ -697,7 +699,7 @@ param (
     Write-Debug ($buffer -join ' ')
 
     for ([int]$i=0; $i -lt 16; $i++) {
-        New-Object PSobject -Property @{Level=$buffer[$i*0x18]; Name=$QUEST_ENUM[$buffer[1+$i*0x18]]; Active=$QUEST_STATE[$buffer[2+$i*0x18]]; QuestLevel=$buffer[12+$i*0x18]}
+        New-Object PSobject -Property @{DungeonLevel=$buffer[$i*0x18]; Name=$QUEST_ENUM[$buffer[1+$i*0x18]]; Active=$QUEST_STATE[$buffer[2+$i*0x18]]; QuestLevel=$buffer[12+$i*0x18]}
     }
 }
 

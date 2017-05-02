@@ -30,7 +30,7 @@ CompanyName = ''
 Copyright = '(c) 2017 Serpen. Alle Rechte vorbehalten.'
 
 # Beschreibung der von diesem Modul bereitgestellten Funktionen
-# Description = ''
+Description = 'Powershell Module for Diablo 1'
 
 # Die für dieses Modul mindestens erforderliche Version des Windows PowerShell-Moduls
 PowerShellVersion = '2.0'
@@ -57,7 +57,7 @@ PowerShellVersion = '2.0'
 # RequiredAssemblies = @()
 
 # Die Skriptdateien (PS1-Dateien), die vor dem Importieren dieses Moduls in der Umgebung des Aufrufers ausgeführt werden.
-ScriptsToProcess = 'definitions.ps1'
+#ScriptsToProcess = 'definitions.ps1'
 
 # Die Typdateien (.ps1xml), die beim Importieren dieses Moduls geladen werden sollen
 # TypesToProcess = @()
@@ -75,7 +75,7 @@ FunctionsToExport = 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-D
 CmdletsToExport = 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-DiabloSession','Export-DiabloItem','Get-DiabloBelt','Get-DiabloCharacterPosition','Get-DiabloCharacterStats','Get-DiabloDifficulty','Get-DiabloEntrances','Get-DiabloInventory','Get-DiabloMonsterKills','Get-DiabloPlayers','Get-DiabloQuests', 'Get-DiabloRucksack','Get-DiabloSpell','Get-DiabloStoreItems','Get-DiabloTownPortal','Get-DiabloVersion','Invoke-DiabloIdentifyItem','Invoke-DiabloRepairItem','Set-DiabloDifficulty', 'Set-DiabloEntrances','Set-DiabloItemProperty','Set-DiabloPoints','Set-DiabloSpell'
 
 # Die aus diesem Modul zu exportierenden Variablen
-#VariablesToExport = '*'
+VariablesToExport = ''
 
 # Aus diesem Modul zu exportierende Aliase. Um optimale Leistung zu erzielen, verwenden Sie keine Platzhalter und löschen den Eintrag nicht. Verwenden Sie ein leeres Array, wenn keine zu exportierenden Aliase vorhanden sind.
 AliasesToExport = @()
