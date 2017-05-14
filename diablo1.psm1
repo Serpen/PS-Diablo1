@@ -1,10 +1,10 @@
 $PSScriptRoot2 = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 Add-Type -path $PSScriptRoot2\Serpen.Wrapper.ProcessMemory.cs
-Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Spell {}}" -IgnoreWarnings
-Add-Type -TypeDefinition "namespace Serpen.Diablo {public class Item {}}" -IgnoreWarnings
+Add-Type -path $PSScriptRoot2\DiabloItem.cs, $PSScriptRoot2\Spell.cs
 
 . "$PSScriptRoot2\definitions.ps1"
+. "$PSScriptRoot2\Offsets.ps1"
 
 function Get-DiabloVersion {
 [CmdLetBinding()]
@@ -15,25 +15,14 @@ param (
 )
 
 if ($PSCmdlet.ParameterSetName -eq 'FromFile') {
-    switch ((Get-FileHash $File -Algorithm MD5).Hash) {
-        '6F0C02AAF2B29B1C17947AE15F4B82EE' {[Version]'1.0.0.0'}
-        '040C81EB1666D66BD900351CB01DE10E' {[Version]'1.0.2.0'}
-        '378FF4FE861032702520BCE313C1650C' {[Version]'1.0.3.0'}
-        '907201801202D7A21D47E8BDAB31AC26' {[Version]'1.0.4.0'}
-        'A353E8EBCED6054B4D25D6DD821BD00F' {[Version]'1.0.5.0'}
-        '6D86757A5EF2AB91D32C7E01478D4C8F' {[Version]'1.0.7.0'}
-        '8C5859E70E16849512C84AF3D76E26EE' {[Version]'1.0.8.0'}
-        '0D1A2B10F8B7FC1A388109BD8ABF05D1' {[Version]'1.0.9.0'}
-        'DA62D5CD8BD71A0B66E6D4EF7A111233' {[Version]'1.0.9.1'}
-
-        '7101CDDAC45ED22227B53DE2D0F11667' {[Version]'0.4.1.9'}
-        '21563BAE0ED8580FC1D4B4A4344EB89A' {[Version]'0.4.1.8'}
-
-        default {
-            Write-Error 'No Version Information'
-            return New-Object Version
-        } #end default
-    } #end switch
+    $hash = 0
+    foreach ($Ver in $VersionTable)  {
+        if ($hash -eq $Ver.FileHash) {
+            return $Ver
+        }
+    }
+    Write-Error 'No Version Information'
+    
 } else {
     if ($PSCmdlet.ParameterSetName -eq 'FromProcess') {
         $handle = [Serpen.Wrapper.ProcessMemory]::OpenProcess(0x10, $false, $Process.Id)
@@ -41,19 +30,15 @@ if ($PSCmdlet.ParameterSetName -eq 'FromFile') {
         $handle = $MemoryHandle
     }
 
-    $bufferSmall = [array]::CreateInstance([byte], 11)
+    $bufferSmall = [array]::CreateInstance([byte], 18)
     [int]$read = 0
 
-    foreach ($VerString in $VersionStringMatch.GetEnumerator())  {
-        [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory([int]$handle,$VerString.key,$bufferSmall,11,[ref]$read) | Out-Null
-        if ([System.Text.Encoding]::ASCII.GetString($bufferSmall) -eq 'Diablo v1.0') {
+    foreach ($Ver in $VersionTable)  {
+        [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory([int]$handle,$Ver.VersionOffset,$bufferSmall,$Ver.VersionOffsetString.Length,[ref]$read) | Out-Null
+        if ([System.Text.Encoding]::ASCII.GetString($bufferSmall, 0, $Ver.VersionOffsetString.Length) -eq $Ver.VersionOffsetString) {
             if ($PSCmdlet.ParameterSetName -eq 'FromProcess') { [Serpen.Wrapper.ProcessMemory]::CloseHandle($handle) | Out-Null}
-            return $VerString.Value
-        } #end if GetString
-        if (([System.Text.Encoding]::ASCII.GetString($bufferSmall) -eq 'Diablo v1.0') -or ([System.Text.Encoding]::ASCII.GetString($bufferSmall) -eq 'Hellfire v1')) {
-            if ($PSCmdlet.ParameterSetName -eq 'FromProcess') { [Serpen.Wrapper.ProcessMemory]::CloseHandle($handle) | Out-Null}
-            return $VerString.Value
-        } #end if GetString
+            return $Ver
+        }
     } #end foreach
     [Serpen.Wrapper.ProcessMemory]::CloseHandle($handle) | Out-Null
     Write-Error 'No Version Information'
@@ -74,29 +59,13 @@ function Connect-DiabloSession {
         return
     }
 
-    [version]$Version = Get-DiabloVersion -MemoryHandle $MemHandle
+    $Version = Get-DiabloVersion -MemoryHandle $MemHandle
 
-    if ($Version.Major -ge 1) {
-        switch ($Version.ToString()) {
-            '1.0.0.0' {$start_offset = $start_offsetV100}
-            '1.0.2.0' {$start_offset = $start_offsetV102}
-            '1.0.3.0' {$start_offset = $start_offsetV103}
-            '1.0.4.0' {$start_offset = $start_offsetV104}
-            '1.0.5.0' {$start_offset = $start_offsetV105}
-            '1.0.7.0' {$start_offset = $start_offsetV107}
-            '1.0.8.0' {$start_offset = $start_offsetV108}
-            '1.0.9.0' {$start_offset = $start_offsetV109}
-            '1.0.9.1' {$start_offset = $start_offsetV109}
-            '2.0.1.0' {$start_offset = $start_offsetV201}
-        }
+    $DiabloSession = New-Object PSObject -Property @{Process=$proc; Version = $Version.Version; StartOffset = $Version.StartOffset; ProcessMemoryHandle = $MemHandle}
+    $DiabloSession.psobject.TypeNames.Insert(0,'Serpen.Diablo.Session')
+    $global:DiabloSession = $DiabloSession
+    return $DiabloSession
 
-        $DiabloSession = New-Object PSObject -Property @{Process=$proc; Version = $Version; StartOffset = $start_offset; ProcessMemoryHandle = $MemHandle}
-        $DiabloSession.psobject.TypeNames.Insert(0,'Serpen.Diablo.Session')
-        $global:DiabloSession = $DiabloSession
-        return $DiabloSession
-    } else {
-        Write-Error 'Could not Connect Diablo Session'
-    }
 }
 
 function DisConnect-DiabloSession {
@@ -120,6 +89,7 @@ param ([byte[]]$bytes, [int]$start, [int]$len)
 
 
 function Get-DiabloPlayers {
+[CmdletBinding()]
 param (
     $DiabloSession = $Global:DiabloSession
 )
@@ -132,12 +102,14 @@ param (
     [int]$read = 0
     $Buffer = [array]::CreateInstance([byte],$PLAYERNAME_LENGTH)
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$PLAYERS_COUNT_OFFSET,$Buffer,1,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle, (GetVersionsSpecificOffset 'PlayersCount'),$Buffer,1,[ref]$read) | Out-Null
     
     [byte]$playersCount = $buffer[0]
 
+    Write-Verbose "Found $playersCount Players"
+
     for ([int]$i = 0; $i -lt $playersCount; $i++) {
-        [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+($i*$PLAYER_OFFSET)+$PLAYERNAME_OFFSET,$Buffer,$Buffer.length,[ref]$read) | Out-Null
+        [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Players' $i),$Buffer,$Buffer.length,[ref]$read) | Out-Null
         New-Object PSobject -Property @{'Index'=($i+1); 'Name'=(ConvertFrom-DiabloString $Buffer 0 $PLAYERNAME_LENGTH)}
     }
 
@@ -162,7 +134,7 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$DIFFICULT_OFFSET,$buffer,$buffer.length,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Difficulty'),$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
     $DIFFICULTY_ENUM[$Buffer[0]]
@@ -189,8 +161,8 @@ param (
         'Hell' {$DifficultyIndex = 2}
     }
 
-    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$DIFFICULT_OFFSET,$DifficultyIndex,1,[ref]$read)) {
-        Write-Error 'Could not set DiabloEntrances'
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Difficulty'),$DifficultyIndex,1,[ref]$read)) {
+        Write-Error 'Could not set Difficulty'
     } else {
         Write-Warning 'Takes affect in next game'
     }
@@ -215,13 +187,12 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$PLAYERS_COUNT_OFFSET,$Buffer,1,[ref]$read) | Out-Null
-    if ($PlayerIndex -gt $buffer[0]) {
+    if (!(Test-ValidPlayer $PlayerIndex)) {
         Write-Error 'No Such Player'
         return
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+(($PlayerIndex-1) * $PLAYER_OFFSET),$buffer,$buffer.length,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Character' $PlayerIndex),$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
     $Properties.Add('Name', (ConvertFrom-DiabloString -bytes $buffer $PLAYERNAME_OFFSET $PLAYERNAME_LENGTH))
@@ -229,8 +200,8 @@ param (
     $Properties.Add('Alive', ![bool]$buffer[$POSSIBLE_IS_ALIVE_OFFSET])
 
     for ([int]$i = 0; $i -lt $STAT_ENUM.Length; $i++) {
-        $Properties.Add("$($STAT_ENUM[$i]) Base", $buffer[$STAT_OFFSET+$i*8])
-        $Properties.Add("$($STAT_ENUM[$i]) Now", $buffer[($STAT_OFFSET+$i*8)-4])
+        $Properties.Add("$($STAT_ENUM[$i]) Base", [System.BitConverter]::ToInt32($buffer,$STAT_OFFSET+$i*8))
+        $Properties.Add("$($STAT_ENUM[$i]) Now", [System.BitConverter]::ToInt32($buffer,$STAT_OFFSET+$i*8-4))
     }
 
     if ($PlayerIndex -eq 1) {
@@ -272,16 +243,16 @@ param (
     }
 
     switch ($Store) {
-        'Wirt' {$curSO = $DiabloSession.StartOffset + 0x18CA8; $count = 1}
-        'Griswold Premium' {$curSO = $DiabloSession.StartOffset + 0x18E20; $count = 6}
-        'Griswold Basic'  {$curSO = $DiabloSession.StartOffset + 0x22740; $count = 20}
-        'Pepin' {$curSO = $DiabloSession.StartOffset + 0x20750; $count = 20}
-        'Adria' {$curSO = $DiabloSession.StartOffset + 0x1ea88; $count = 20}
+        'Wirt' {$curSO = (GetVersionsSpecificOffset 'Store'); $count = 1}
+        'Griswold Premium' {$curSO = (GetVersionsSpecificOffset 'Store') - 0x18CA8 + 0x18E20; $count = 6}
+        'Griswold Basic'  {$curSO = (GetVersionsSpecificOffset 'Store') - 0x18CA8 + 0x22740; $count = 20}
+        'Pepin' {$curSO = (GetVersionsSpecificOffset 'Store') - 0x18CA8 + 0x20750; $count = 20}
+        'Adria' {$curSO = (GetVersionsSpecificOffset 'Store') - 0x18CA8 + 0x1ea88; $count = 20}
     }
 
     for ([int]$i = 0; $i -lt $count; $i++) {
         $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset ($curSO + ($i*$ITEM_SIZE))
-        if ($itm.class -ne 'invalid') {
+        if ($itm.Itemclass -ne 'invalid') {
             $itm
         } else {
             break
@@ -310,13 +281,12 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$PLAYERS_COUNT_OFFSET,$Buffer,1,[ref]$read) | Out-Null
-    if ($PlayerIndex -gt $buffer[0]) {
+    if (!(Test-ValidPlayer $PlayerIndex)) {
         Write-Error 'No Such Player'
         return
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$TP_OFFSET+(($PlayerIndex-1)*5),$buffer,$buffer.length,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'TownPortal' $PlayerIndex),$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
     if ($buffer[0] -eq 0xFF) {
@@ -335,6 +305,7 @@ param (
     $returnobject
 }
 
+#not for mp
 function Get-DiabloEntrances {
 param (
     $DiabloSession = $Global:DiabloSession
@@ -354,7 +325,7 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset-$WAYPOINT_OFFSET,$buffer,$buffer.length,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Entrance'),$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
     $Properties.Add('Dungeon', $true)
@@ -367,7 +338,7 @@ param (
     $returnobject
 }
 
-function Set-DiabloEntrances {
+function Enable-DiabloEntrances {
 param (
     [Switch]$Catacombs,
     [Switch]$Caves,
@@ -384,7 +355,7 @@ param (
 
     $buffer[0] = [byte]($Catacombs.ToBool())*1 + [byte]$Caves.ToBool()*2 + [byte]$Hell.ToBool()*4
 
-    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset-$WAYPOINT_OFFSET,$buffer,$buffer.length,[ref]$read)) {
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Entrance'),$buffer,$buffer.length,[ref]$read)) {
         Write-Error 'Could not set DiabloEntrances'
     }
     
@@ -402,7 +373,7 @@ param (
         return
     }
 
-    $buffer = [array]::CreateInstance([byte], 0x20)
+    $buffer = [array]::CreateInstance([byte], 0x100)
     [int]$read = 0
 
     if ($PSVersionTable.PSVersion.Major -gt 2) {
@@ -411,24 +382,30 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$PLAYERS_COUNT_OFFSET,$Buffer,1,[ref]$read) | Out-Null
-    if ($PlayerIndex -gt $buffer[0]) {
+    if (!(Test-ValidPlayer $PlayerIndex)) {
         Write-Error 'No Such Player'
         return
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset-(($PlayerIndex-1) * $PLAYER_OFFSET),$buffer,$buffer.length,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Position' $PlayerIndex),$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
-    $Properties.Add('Dungeon', $buffer[$DUNGENON_OFFSET])
-    $Properties.Add('X', $buffer[$POS_X_OFFSET])
-    $Properties.Add('Y', $buffer[$POS_Y_OFFSET])
+    $Properties.Add('Dungeon', $buffer[0x3C])
+    $Properties.Add('X', $buffer[0x40])
+    $Properties.Add('Y', $buffer[0x44])
+
+    $Properties.Add('Goto X', $buffer[0x60])
+    $Properties.Add('Goto Y', $buffer[0x54])
+
+    $Properties.Add('Direction', $Dir[$buffer[0x78]])
+
+    $Properties.Add('Mode', @('Stand','Go Up','Go Down','Go Queer','Attack','Bow','Block??','Hurt','Dead','Spell','Portal',11,12)[$buffer[0x8]])
+    $Properties.Add('Mode2', $buffer[0x8])
 
     $returnobject = New-Object PSObject -Property $Properties
     $returnobject.psobject.TypeNames.Insert(0,'Serpen.Diablo.Position')
     $returnobject
 }
-
 
 function Set-DiabloItemProperty {
 param (
@@ -452,6 +429,12 @@ param (
     [byte]$DurabilityFrom,
     [Parameter(Mandatory=$false,ParameterSetName='DirectProperty')]
     [byte]$DurabilityTo,
+    [Parameter(Mandatory=$false,ParameterSetName='DirectProperty')]
+    [Serpen.Diablo.eSpell]$Spell = -1,
+    [Parameter(Mandatory=$false,ParameterSetName='DirectProperty')]
+    [uint16]$Charges,
+    [Parameter(Mandatory=$false,ParameterSetName='DirectProperty')]
+    [uint16]$ChargesMax,
     $DiabloSession = $Global:DiabloSession
 )
 
@@ -466,15 +449,7 @@ param (
         $PropOffset = -1
         switch ($Property) {
             'Identified' {$PropOffset = $ITM_IDENTIFIED_OFFSET}
-            'Damage From'{$PropOffset = $ITM_DMG_FROM_OFFSET}
-            'Damage To'  {$PropOffset = $ITM_DMG_TO_OFFSET}
             'Spell'      {$PropOffset = $ITM_SPELL_OFFSET}
-            'Charges From' {$PropOffset = $ITM_CHARGES_FROM_OFFSET}
-            'Charges To' {$PropOffset = $ITM_CHARGES_TO_OFFSET}
-            'Durability From' {$PropOffset = $ITM_DUR_FROM_OFFSET}
-            'Durability To' {$PropOffset = $ITM_DUR_TO_OFFSET}
-            'Resist All' {$PropOffset = $ITM_RESISTALL_OFFSETS}
-            'All Attributes' {$PropOffset = $ITM_ALLATTRIB_OFFSETS}
             'Base Price' {$PropOffset = $ITM_BASEPRICE_OFFSET}
             'Armor' {$PropOffset = $ITM_ARMOR_OFFSET}
         }
@@ -500,6 +475,15 @@ param (
         } elseif ($DurabilityTo -ne 0) {
             $PropOffset = $ITM_DUR_TO_OFFSET
             $value = $DurabilityTo
+        } elseif ($Spell -ne -1) {
+            $PropOffset = $ITM_SPELL_OFFSET
+            $value = $Spell
+        } elseif ($Charges -ne 0) {
+            $PropOffset = $ITM_CHARGES_FROM_OFFSET
+            $value = $Charges
+        } elseif ($ChargesMax -ne 0) {
+            $PropOffset = $ITM_CHARGES_TO_OFFSET
+            $value = $ChargesMax
         }
     }
 
@@ -508,11 +492,10 @@ param (
         return
     }
 
-    #$buffer = [array]::CreateInstance([byte],4)
     $buffer = [System.BitConverter]::GetBytes($value)
 
     foreach ($po in $PropOffset) {
-        if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$item._Offset + $po,$buffer,4,[ref]$read)) {
+        if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$item.MemoryOffset + $po,$buffer,4,[ref]$read)) {
             Write-Error "Could not set property $Property for item '$($item.identifiedname)'"
         }
     }
@@ -520,7 +503,10 @@ param (
 
 function Invoke-DiabloIdentifyItem {
 param (
-    [Parameter(Mandatory=$true)][Object]$Item,
+    [Parameter(Mandatory=$true,ParameterSetName='Item')]
+    [Serpen.Diablo.Item]$Item,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,ParameterSetName='Offset')]
+    [uint64]$MemoryOffset,
     $DiabloSession = $Global:DiabloSession
 )
     if ($DiabloSession -eq $null) {
@@ -528,16 +514,23 @@ param (
         return
     }
 
+    if ($PSCmdlet.ParameterSetName -eq 'Item') {
+        $MemoryOffset = $Item.MemoryOffset   
+    }
+
     [int]$read = 0
 
-    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$item._Offset + 0x38,1,1,[ref]$read)) {
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$MemoryOffset + 0x38,1,1,[ref]$read)) {
         Write-Error "Could not identify item '$($item.identifiedname)'"
     }
 }
 
-function Invoke-DiabloRepairItem {
+function Repair-DiabloItem {
 param (
-    [Parameter(Mandatory=$true)][Object]$Item,
+    [Parameter(Mandatory=$true,ParameterSetName='Item')]
+    [Serpen.Diablo.Item]$Item,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,ParameterSetName='Offset')]
+    [uint64]$MemoryOffset,
     $DiabloSession = $Global:DiabloSession
 )
     if ($DiabloSession -eq $null) {
@@ -545,9 +538,13 @@ param (
         return
     }
 
+    if ($PSCmdlet.ParameterSetName -eq 'Item') {
+        $MemoryOffset = $Item.MemoryOffset   
+    }
+
     [int]$read = 0
 
-    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$item._Offset + $ITM_DUR_FROM_OFFSET,$item.DurTo,1,[ref]$read)) {
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$MemoryOffset + $ITM_DUR_FROM_OFFSET,$item.DurabilityMax,1,[ref]$read)) {
         Write-Error "Could not repair item '$($item.identifiedname)'"
     }
 }
@@ -564,7 +561,7 @@ param (
 
     [int]$read = 0
 
-    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$LEVELUP_OFFSET,$Points,1,[ref]$read)) {
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'LevelUpPoints'),$Points,1,[ref]$read)) {
         Write-Error 'Could not set DiabloPoints'
     }
     
@@ -573,7 +570,7 @@ param (
 
 function Get-DiabloSpell {
 param (
-    [String[]]$Spell,
+    [Serpen.Diablo.eSpell[]]$Spell,
     $DiabloSession = $Global:DiabloSession
 )
     if ($DiabloSession -eq $null) {
@@ -591,33 +588,22 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$SPELLS_OFFSET,$buffer,$buffer.length,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Spell'),$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
-    if ($Spell -eq "*" -or $Spell -eq $null) {$Spell = $SPELL_NAMES}
+    #if ($Spell -eq "*" -or $Spell -eq $null) {$Spell = $SPELL_NAMES}
+    if ($Spell -eq "All" -or $Spell -eq $null) {$Spell = [enum]::GetValues([Serpen.Diablo.eSpell]) | ? {$_ -ge 0}}
 
     foreach ($spellSingle in $Spell) {
-        $SpellIndex = -1
-        for ([int]$i=0; $i -lt $SPELL_NAMES.Length; $i++) {
-            if ($SPELL_NAMES[$i] -eq $spellSingle) {
-                $SpellIndex = $i
-                $spellSingle = $SPELL_NAMES[$i]
-                break
-            }
-        }
-        if ($SpellIndex -eq -1) {
-            Write-Error "$Spell not found"
-            break
-        }
-        #$SpellIndex = 0 #$SPELL_NAMES.IndexOf($Spell)
+        
         $spellflags = [System.BitConverter]::ToInt32($buffer,$SPELL_NAMES.Length-1)
-        $spellLevel = $buffer[$SpellIndex]
+        $spellLevel = $buffer[$spellSingle]
 
         $returnobject = New-Object Serpen.Diablo.Spell
         $returnobject | Add-Member -MemberType NoteProperty -Name Spell -Value $spellSingle
-        $returnobject | Add-Member -MemberType NoteProperty -Name Index -Value $SpellIndex
-        $returnobject | Add-Member -MemberType NoteProperty -Name Spellbook -Value "Page $($SPELLBOX_X[$SpellIndex]).$($SPELLBOX_Y[$SpellIndex])"
-        $returnobject | Add-Member -MemberType NoteProperty -Name Enabled -Value ($SpellIndex -eq ($spellflags -band $SpellIndex ))
+        $returnobject | Add-Member -MemberType NoteProperty -Name Index -Value ([int]$spellSingle)
+        $returnobject | Add-Member -MemberType NoteProperty -Name Spellbook -Value "Page $($SPELLBOX_X[$spellSingle]).$($SPELLBOX_Y[$spellSingle])"
+        $returnobject | Add-Member -MemberType NoteProperty -Name Enabled -Value ($spellSingle -eq ($spellflags -band $spellSingle ))
         $returnobject | Add-Member -MemberType NoteProperty -Name Level -Value $spellLevel
 
         $returnobject
@@ -626,7 +612,7 @@ param (
 function Set-DiabloSpell {
 param (
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true)]
-    [String]$Spell,
+    [Serpen.Diablo.eSpell]$Spell,
     [Parameter(Mandatory=$true)][ValidateRange(0,15)]
     [byte]$Level,
     $DiabloSession = $Global:DiabloSession
@@ -642,32 +628,21 @@ begin {
 }
 
 process {
-    $SpellIndex = -1
-    for ([int]$i=0; $i -lt $SPELL_NAMES.Length; $i++) {
-        if ($SPELL_NAMES[$i] -eq $Spell) {
-            $SpellIndex = $i
-            break
-        }
-    }
-    if ($SpellIndex -eq -1) {
-        Write-Error "$Spell not found"
-        break
-    }
 
     [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$SPELLFLAGS_OFFSET,$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
     $spellflags = [System.BitConverter]::ToInt32($buffer,0)
-    $spellflags = $spellflags -bor [math]::Pow(2, $SpellIndex)
+    $spellflags = $spellflags -bor [math]::Pow(2, $Spell)
     $buffer = [System.BitConverter]::GetBytes($spellflags)
 
     if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$SPELLFLAGS_OFFSET,$buffer,$buffer.length,[ref]$read)) {
-        Write-Error 'Could not write Spellflags'
+        Write-Error "Could not write Spellflags for $Spell"
         return
     }
 
-    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset+$SPELLS_OFFSET+$SpellIndex,$Level,1,[ref]$read)) {
-        Write-Error 'Could not write Spelllevel'
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Spell')+$Spell,$Level,1,[ref]$read)) {
+        Write-Error "Could not write Spelllevel for $Spell"
         return
     }
 } #end process
@@ -695,8 +670,14 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,0x69BD10,$buffer,$buffer.length,[ref]$read) | Out-Null
-    Write-Debug ($buffer -join ' ')
+    $offset = (GetVersionsSpecificOffset 'Quest')
+
+    if ($offset -eq -1) {
+        throw [System.NotSupportedException]'Quest not supported in this version'
+        return
+    }
+
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$Offset,$buffer,$buffer.length,[ref]$read) | Out-Null
 
     for ([int]$i=0; $i -lt 16; $i++) {
         New-Object PSobject -Property @{DungeonLevel=$buffer[$i*0x18]; Name=$QUEST_ENUM[$buffer[1+$i*0x18]]; Active=$QUEST_STATE[$buffer[2+$i*0x18]]; QuestLevel=$buffer[12+$i*0x18]}
@@ -724,7 +705,7 @@ param (
         $Properties = @{}
     }
 
-    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$DiabloSession.StartOffset-$MONSTER_OFFSET,$buffer,$buffer.length,[ref]$read) | Out-Null
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'MonsterKills'),$buffer,$buffer.length,[ref]$read) | Out-Null
     Write-Debug ($buffer -join ' ')
 
     if ($Monster -eq "*" -or $Monster -eq $null) {$Monster = $Monster_ENUM}
@@ -743,7 +724,8 @@ param (
                 $MonsterSingle = $Monster_ENUM[$i]
                 break
             }
-        }
+        } #foreach
+
         if ($MonsterIndex -eq -1) {
             Write-Error "$Spell not found"
             break
@@ -757,11 +739,12 @@ param (
         $returnobject = New-Object PSObject -Property $Properties
         $returnobject.psobject.TypeNames.Insert(0,'Serpen.Diablo.MonsterKill')
         $returnobject
-    }
+    } #foreach
 }
 
-function Get-DiabloInventory {
+function Get-DiabloHeroEquipment {
 param (
+    [ValidateSet('All', 'Helm','Amulett','LeftHand','RightHand','Plate','LeftRing','RightRing')][String[]]$Position = 'All',
     $DiabloSession = $Global:DiabloSession
 )
     if ($DiabloSession -eq $null) {
@@ -769,14 +752,40 @@ param (
         return
     }
 
-    for ([int]$i = 0; $i -lt 7; $i++) {
-        $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset ($DiabloSession.StartOffset + $INV_OFFSET +($i*$ITEM_SIZE))
-        if ($itm.class -ne 'invalid') {
-            $itm
+    $offsets = @()
+
+    if ($Position -contains 'All') {
+        $offsets = 0..6
+    } else {
+        if ($Position -contains 'Helm') {
+            $offsets += 0
+        }
+        if ($Position -contains 'LeftRing') {
+            $offsets += 1
+        }
+        if ($Position -contains 'RightRing') {
+            $offsets += 2
+        }
+        if ($Position -contains 'RightHand') {
+            $offsets += 3
+        }
+        if ($Position -contains 'LeftHand') {
+            $offsets += 4
+        }
+        if ($Position -contains 'Amulett') {
+            $offsets += 5
+        }
+        if ($Position -contains 'Plate') {
+            $offsets += 6
         }
     }
 
-    
+    foreach ($i in $offsets) {
+        $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset (GetVersionsSpecificOffset 'Inventory' $i)
+        if ($itm.Itemclass -ne 'invalid') {
+            $itm
+        }
+    }
 }
 
 function Get-DiabloBelt {
@@ -788,15 +797,21 @@ param (
         return
     }
 
+    $Offset = GetVersionsSpecificOffset 'Belt'
+    if ($offset -eq -1) {
+        throw [System.NotSupportedException]"Belt not supported in this version"
+        return
+    }
+
     for ([int]$i = 0; $i -lt 8; $i++) {
-        $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset ($DiabloSession.StartOffset + $BELT_OFFSET +($i*$ITEM_SIZE))
-        if ($itm.class -ne 'invalid') {
+        $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset (GetVersionsSpecificOffset 'Belt' $i)
+        if ($itm.Itemclass -ne 'invalid') {
             $itm
         }
     }
 }
 
-function Get-DiabloRucksack {
+function Get-DiabloHeroInventory {
 param (
     $DiabloSession = $Global:DiabloSession
 )
@@ -806,12 +821,78 @@ param (
     }
 
     for ([int]$i = 0; $i -lt 18; $i++) {
-        $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset ($DiabloSession.StartOffset + $INV_BACKPACK_OFFSET +($i*$ITEM_SIZE))
-        if ($itm.class -ne 'invalid') {
+        $itm = ConvertTo-DiabloItem -DiabloSession $DiabloSession -Offset (GetVersionsSpecificOffset 'Rucksack' $i)
+        if ($itm.Itemclass -ne 'invalid') {
             $itm
         } else {
             break
         }
+    }
+}
+
+function Get-DiabloMonsters {
+param (
+    $DiabloSession = $Global:DiabloSession
+)
+
+    $MONSTER_SIZE = 0xE4
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    $buffer = [array]::CreateInstance([byte], $MONSTER_SIZE)
+    [int]$read = 0
+
+    if ($PSVersionTable.PSVersion.Major -gt 2) {
+        $Properties = [ordered]@{}
+    } else {
+        $Properties = @{}
+    }
+
+    $REL = 0
+
+    # first 4 are players golems
+
+    $MO = 0x4C9B90
+    
+    #del f:\d1\monster-buffer.bin -ea silentlycontinue
+
+    for ([int]$i=0; $i -le 200; $i++) {
+    #foreach ($i in 68) {
+        [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$MO + ($i*$MONSTER_SIZE) ,$buffer,$buffer.length,[ref]$read) | Out-Null
+        #(($buffer | % {"{0:x2}" -f $_}) -join ' ') | Out-File -Append -FilePath f:\d1\monster-buffer.bin
+        $end = 0x40
+        if ($buffer[0] -eq 0 -and $buffer[4] -eq 0) {
+            Write-warning "Monster count $i $($buffer[$end])"
+            break
+        }
+
+        if ($PSVersionTable.PSVersion.Major -gt 2) {
+            $Properties = [ordered]@{}
+        } else {
+            $Properties = @{}
+        }
+
+        $Properties.Add('n', $i)
+
+        $Properties.Add('active', $buffer[0x40])
+        $Properties.Add('_offset', $MO + ($i*$MONSTER_SIZE))
+
+        $Properties.Add('X', $buffer[0x0+$REL])
+        $Properties.Add('Y', $buffer[0x4+$REL])
+
+        $Properties.Add('Goto X', $buffer[0x10+$REL])
+        $Properties.Add('Goto Y', $buffer[0x14+$REL])
+
+
+        $Properties.Add('HP', [System.BitConverter]::ToInt32($buffer,0x74+$REL))
+        $Properties.Add('HP max', [System.BitConverter]::ToInt32($buffer,0x70+$REL))
+
+        $returnobject = New-Object PSObject -Property $Properties
+        $returnobject.psobject.TypeNames.Insert(0,'Serpen.Diablo.Monster')
+        $returnobject
     }
 }
 
@@ -826,231 +907,20 @@ param (
     [Parameter(ParameterSetName='Session')][int]$Offset
 )
     
-    $pre2 = 0
     if ($PSCmdlet.ParameterSetName -eq 'File') {
-        [System.IO.FileStream]$stream = [System.IO.File]::OpenRead($File)
-        $buffer = [array]::CreateInstance([byte],$stream.Length)
-        $read = $stream.Read($buffer, 0, $stream.Length)
-        $stream.Close()
+        $object = New-Object Serpen.Diablo.Item $File
 
         Write-Verbose "Processing $File"
     } elseif ($PSCmdlet.ParameterSetName -eq 'Byte') {
-        $read = $buffer.Length
-        $pre2 = 0 #-1
+        $object = New-Object Serpen.Diablo.Item @(, $buffer)
     } else {
         $buffer = [array]::CreateInstance([byte], 0x170)
         [int]$read = 0
         [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$Offset,$buffer,$buffer.length,[ref]$read) | Out-Null
-    }
-
-    [byte[]]$ITM_FORMAT_PREEMBLE = @(0x49,0x54,0x4d,0x30,0x31,0x2e,0x49,0x27,0x6c,0x6c,0x20,0x67,0x65,0x74,0x20,0x74,0x68,0x61,0x74,0x20,0x61,0x6c,0x27,0x54,0x68,0x6f,0x72,0x21,0x0,0x0,0x0,0x0)
-	$PREAMBLE = -1
-    if ($read -eq 0x190) {
-        $PREAMBLE = 0x20 #-1
-    } elseif ($read -eq 0x170) {
-        $PREAMBLE = 0-$pre2
-    }
-
-    #if ($buffer[0..0x1f] -eq $ITM_FORMAT_PREEMBLE) {
-    if ((compare-object $buffer[0..0x1f] $ITM_FORMAT_PREEMBLE) -eq $null) {
-        $PREAMBLE = 0x20
-    }
-	
-	if ($PREAMBLE -eq -1) {
-		write-Warning "Unknown Header in $file"
-		return
-	}
-    
-    if ($PSVersionTable.PSVersion.Major -gt 2) {
-        $Properties = [ordered]@{}
-    } else {
-        $Properties = @{}
-    }
-
-    #$properties.Add("File", $File)
-	#$properties.Add("PREAMBLE", $PREAMBLE)
-	
-    $properties.Add("UnidentifiedName", (ConvertFrom-DiabloString $buffer (0x3d+$PREAMBLE) 0x40))
-    $properties.Add("IdentifiedName", (ConvertFrom-DiabloString $buffer (0x7d+$PREAMBLE) 0x40))
-
-    $properties.Add("ID", [System.BitConverter]::ToUInt32($buffer,$PREAMBLE))
-
-    $temp = [System.BitConverter]::ToUInt16($buffer,0x4+$PREAMBLE)
-    
-    if ($temp -eq ($temp -bor 0x10000)) {
-        $properties.Add("Found", "0x10000 Level ?" + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x8000)) {
-        $properties.Add("Found", "0x8000 Level ?" + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x4000)) {
-        $properties.Add("Found", "0x4000 Level ?" + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x2000)) {
-        $properties.Add("Found", "Adria Level ?" + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x1000)) {
-        $properties.Add("Found", "Wirt Level " + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x800)) {
-        $properties.Add("Found", "Griswold Premium Level " + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x400)) {
-        $properties.Add("Found", "Griswold Basic Level " + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x200)) {
-        $properties.Add("Found", "Single Player Monster Level " + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0x100)) {
-        $properties.Add("Found", "Monster Level " + ($temp -band 63))
-    } elseif ($temp -eq ($temp -bor 0xc0)) {
-        $properties.Add("Found", "Unique Monster Level " + ($temp  -band 63))
-    } elseif ($temp -eq ($temp -bor 0x40)) {
-        #$properties.Add("Found", "Dungeon Level " + (($temp -band 63) -shr 1))
-        $properties.Add("Found", "Dungeon Level " + (($temp -band 63) /2))
-    } else {
-        $properties.Add("Found", "Unknown Level " + ($temp -band 63))
-    }
-
-    #0x6,0x7 00 GAP
-    
-	#$temp = [System.BitConverter]::ToInt32($buffer,0x8+$PREAMBLE)
-	$temp = $buffer[0x8+$PREAMBLE]
-	if ($itemClass.containsKey($temp -as [int])) {
-		$properties.Add("Class", $itemClass[$temp -as [int]])
-	} else {
-		$properties.Add("Class", $temp)
-	}
-
-    #$properties.Add("Col", [System.BitConverter]::ToUInt32($buffer,0xc+$PREAMBLE)) #0-91
-
-    #$properties.Add("Row", [System.BitConverter]::ToUInt32($buffer,0x10+$PREAMBLE)) #0-92
-
-    #$properties.Add("drop_anim_update", [System.BitConverter]::ToUInt32($buffer,0x14+$PREAMBLE)) #0-1
-    #$properties.Add("drop_cel_data", [System.BitConverter]::ToUInt32($buffer,0x18+$PREAMBLE))
-    #$properties.Add("drop_frame_count", [System.BitConverter]::ToUInt32($buffer,0x1C+$PREAMBLE))
-
-    #$properties.Add("cur_drop_frame", [System.BitConverter]::ToUInt32($buffer,0x20+$PREAMBLE)) #1-16
-    #$properties.Add("drop_width", [System.BitConverter]::ToUInt32($buffer,0x24+$PREAMBLE)) #0,96
-    #$properties.Add("drop_x_offset", [System.BitConverter]::ToUInt32($buffer,0x28+$PREAMBLE))
-
-    #$properties.Add("inactive", [System.BitConverter]::ToUInt32($buffer,0x2C+$PREAMBLE))
-
-    #$properties.Add("drop_state", $buffer[0x30+$PREAMBLE]) #0/1
-
-    #$properties.Add("draw_quest_item", [bool][System.BitConverter]::ToUInt32($buffer,0x34+$PREAMBLE)) #0/1
-
-    $properties.Add("Identified", [bool][System.BitConverter]::ToUInt32($buffer,0x38+$PREAMBLE))
-
-    switch ($buffer[0x3c+$PREAMBLE]) {
-        0x0 {$properties["Quality"] = "normal"}
-        0x1 {$properties["Quality"] = "magic"}
-        0x2 {$properties["Quality"] = "Unique"}
-        else {$properties["Quality"] =  $buffer[0x3c]}
-    }
-
-    if ($buffer[0xBD+$PREAMBLE] -lt $equip_type.length) {
-        $properties["equip_type"] = $equip_type[$buffer[0xBD+$PREAMBLE]]
-    } else {
-        $properties["equip_type"] = $buffer[0xBD+$PREAMBLE]
+        $object = New-Object Serpen.Diablo.Item -ArgumentList @(, $buffer)
+        $object | Add-Member -MemberType NoteProperty -Name MemoryOffset -Value $Offset
     }
     
-    if ($buffer[0xBE+$PREAMBLE] -lt $item_category.length) {
-        $properties["Category"] = $item_category[$buffer[0xBE+$PREAMBLE]]
-    } else {
-        $properties["Category"] = $buffer[0xBE+$PREAMBLE]
-    }
-    
-    $properties.Add("Graphics", [System.BitConverter]::ToUInt32($buffer,0xC0+$PREAMBLE))
-
-    $properties.Add("BasePrice", [System.BitConverter]::ToUInt32($buffer,0xC4+$PREAMBLE))
-    $properties.Add("IdentifiedPrice", [System.BitConverter]::ToUInt32($buffer,0xC8+$PREAMBLE))
-
-    $properties.Add("DamageFrom", [System.BitConverter]::ToUInt32($buffer,0xCC+$PREAMBLE))
-    $properties.Add("DamageTo", [System.BitConverter]::ToUInt32($buffer,0xD0+$PREAMBLE))
-
-    $properties.Add("Amor", [System.BitConverter]::ToInt32($buffer,0xD4+$PREAMBLE))
-
-    $properties.Add("Special Effect", "0x{0:x}" -f ([System.BitConverter]::ToUInt32($buffer,0xD8+$PREAMBLE)))
-
-    $temp = [System.BitConverter]::ToUInt32($buffer,0xDC+$PREAMBLE)
-	if ($itemCode.containsKey($temp -as [int])) {
-		$properties.Add("itemCode", $itemCode[$temp -as [int]])
-	} else {
-		$properties.Add("itemCode", $temp)
-	}
-
-    $temp = ([System.BitConverter]::ToUInt32($buffer,0xE0+$PREAMBLE))-1
-    if ($temp -ne -1) {
-        $properties.Add("Spell", $SPELL_NAMES[$temp])
-    }
-    $properties.Add("ChargesFrom", [System.BitConverter]::ToUInt32($buffer,0xE4+$PREAMBLE))
-    $properties.Add("ChargesTo", [System.BitConverter]::ToUInt32($buffer,0xE8+$PREAMBLE))
-
-    $properties.Add("DurFrom", [System.BitConverter]::ToUInt32($buffer,0xEC+$PREAMBLE))
-    $properties.Add("DurTo", [System.BitConverter]::ToUInt32($buffer,0xF0+$PREAMBLE))
-
-    $properties.Add("DamageBonus", [System.BitConverter]::ToInt32($buffer,0xF4+$PREAMBLE))
-    $properties.Add("ToHitBonus", [System.BitConverter]::ToInt32($buffer,0xF8+$PREAMBLE))
-
-    $properties.Add("AmorBonus", [System.BitConverter]::ToInt32($buffer,0xFc+$PREAMBLE))
-    $properties.Add("StrengthBonus", [System.BitConverter]::ToInt32($buffer,0x100+$PREAMBLE))
-    $properties.Add("MagicBonus", [System.BitConverter]::ToInt32($buffer,0x104+$PREAMBLE))
-    $properties.Add("DexterityBonus", [System.BitConverter]::ToInt32($buffer,0x108))
-    $properties.Add("VitalityBonus", [System.BitConverter]::ToInt32($buffer,0x10c+$PREAMBLE))
-
-    $properties.Add("ResistFire", [System.BitConverter]::ToInt32($buffer,0x110+$PREAMBLE))
-    $properties.Add("ResistLightning", [System.BitConverter]::ToInt32($buffer,0x114+$PREAMBLE))
-    $properties.Add("ResistMagic", [System.BitConverter]::ToInt32($buffer,0x118+$PREAMBLE))
-
-    $properties.Add("ManaBonus", [System.BitConverter]::ToUint16($buffer,0x11c+$PREAMBLE) / 64) #-shr 6)
-
-    $properties.Add("LifeBonus", [System.BitConverter]::ToUint16($buffer,0x120+$PREAMBLE) /64) #-shr 6)
-
-    $properties.Add("ExtraDamage", [System.BitConverter]::ToUInt32($buffer,0x124+$PREAMBLE))
-    $properties.Add("DamageModifier", [System.BitConverter]::ToInt32($buffer,0x128+$PREAMBLE))
-
-    $properties.Add("LightRadius", [System.BitConverter]::ToInt32($buffer,0x12c+$PREAMBLE)*10)
-    
-    $properties.Add("SpellBonus", $buffer[0x130+$PREAMBLE])
-    #$properties.Add("Held in Hand", [bool]$buffer[0x131+$PREAMBLE])
-
-    $properties.Add("unique_id", [System.BitConverter]::ToUInt32($buffer,0x134+$PREAMBLE))
-
-    $properties.Add("FireDamageFrom", [System.BitConverter]::ToUInt32($buffer,0x138+$PREAMBLE))
-    $properties.Add("FireDamageTo", [System.BitConverter]::ToUInt32($buffer,0x13c+$PREAMBLE))
-    
-    $properties.Add("LightningDamageFrom", [System.BitConverter]::ToUInt32($buffer,0x140+$PREAMBLE))
-    $properties.Add("LightningDamageTo", [System.BitConverter]::ToUInt32($buffer,0x144+$PREAMBLE))
-
-    $properties.Add("armor_penetration", [System.BitConverter]::ToUInt16($buffer,0x148+$PREAMBLE))
-
-    #$properties.Add("prefix_effect_type", $buffer[0x14C+$PREAMBLE])
-    #$properties.Add("suffix_effect_type", $buffer[0x14D+$PREAMBLE])
-
-    #$properties.Add("prefix_price", $buffer[0x150+$PREAMBLE])
-    #$properties.Add("prefix_price_multiplier", $buffer[0x154+$PREAMBLE])
-
-    #$properties.Add("suffix_price", $buffer[0x158+$PREAMBLE])
-    #$properties.Add("suffix_price_multiplier", $buffer[0x15C+$PREAMBLE])
-
-    $properties.Add("ReqStr", $buffer[0x160+$PREAMBLE])
-    $properties.Add("ReqMagic", $buffer[0x161+$PREAMBLE])
-    $properties.Add("ReqDex", $buffer[0x162+$PREAMBLE])
-    $properties.Add("ReqVit", $buffer[0x163+$PREAMBLE])
-
-    $properties.Add("Equippable", [bool]$buffer[0x164+$PREAMBLE])
-
-    #$properties.Add("item_id", [System.BitConverter]::ToUInt32($buffer,0x168+$PREAMBLE))
-
-
-    $temp = [System.BitConverter]::ToUInt32($buffer,0x168+$PREAMBLE)
-    if ($itemType.containsKey($temp -as [int])) {
-		$properties.Add("item_id", $itemType[$temp -as [int]])
-	} else {
-		$properties.Add("item_id", $temp)
-	}
-    # 0x18C 00 GAP
-
-    if ($PSCmdlet.ParameterSetName -eq 'Session') {
-         $properties.Add("_Offset", $Offset)
-    }
-    
-    $object = New-Object PSObject -Property $properties
-    $object.psobject.TypeNames.Insert(0,'Serpen.Diablo.Item')
-
     $object
 }
 
@@ -1068,7 +938,7 @@ param (
     [int]$read = 0
     $buffer = [array]::CreateInstance([byte], $ITEM_SIZE)
 
-    if (![Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$item._Offset,$buffer,$buffer.length,[ref]$read)) {
+    if (![Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,$item.MemoryOffset,$buffer,$buffer.length,[ref]$read)) {
         Write-Error "Could not read item '$($item.identifiedname)'"
     }
 
@@ -1076,5 +946,166 @@ param (
     $filestram.Write($buffer, 0, $buffer.length)
     $filestram.Close()
 
+}
 
+function Open-DiabloUI {
+param (
+    [Switch]$Character,
+    [Switch]$Inventory,
+    [Switch]$Spellbook,
+    [Switch]$QuestLog,
+    [Switch]$AutoMap,
+    [Switch]$Spells,
+    $DiabloSession = $Global:DiabloSession
+)
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    $buffer = [array]::CreateInstance([byte], 1)
+    [int]$read = 1
+
+    $addresses = @()
+
+    if ($Character) {
+        $addresses += GetVersionsSpecificOffset 'UI_Char'
+    }
+    if ($Inventory) {
+        $addresses += GetVersionsSpecificOffset 'UI_Inventory'
+    }
+    if ($Spellbook) {
+        $addresses += GetVersionsSpecificOffset 'UI_Spellbook'
+    }
+    if ($QuestLog) {
+        $addresses += GetVersionsSpecificOffset 'UI_Questlog'
+    }
+    if ($AutoMap) {
+        $addresses += GetVersionsSpecificOffset 'UI_AutoMap'
+    }
+    if ($Spells) {
+        $addresses += GetVersionsSpecificOffset 'UI_Spells'
+    }
+
+    foreach ($addr in $addresses) {
+        [Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$addr,$buffer,1,[ref]$read) | Out-Null
+        if ($buffer[0] -ne 1) {
+        if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$addr,1,1,[ref]$read)) {
+                Write-Error 'Could not Open UI'
+            }
+        }
+    }
+}
+
+function Close-DiabloUI {
+param (
+    [Switch]$Character,
+    [Switch]$Inventory,
+    [Switch]$Spellbook,
+    [Switch]$QuestLog,
+    [Switch]$AutoMap,
+    [Switch]$Spells,
+    $DiabloSession = $Global:DiabloSession
+)
+
+    if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    $buffer = [array]::CreateInstance([byte], 1)
+    [int]$read = 1
+
+    $addresses = @()
+
+    if ($Character) {
+        $addresses += GetVersionsSpecificOffset 'UI_Char'
+    }
+    if ($Inventory) {
+        $addresses += GetVersionsSpecificOffset 'UI_Inventory'
+    }
+    if ($Spellbook) {
+        $addresses += GetVersionsSpecificOffset 'UI_Spellbook'
+    }
+    if ($QuestLog) {
+        $addresses += GetVersionsSpecificOffset 'UI_Questlog'
+    }
+    if ($AutoMap) {
+        $addresses += GetVersionsSpecificOffset 'UI_AutoMap'
+    }
+    if ($Spells) {
+        $addresses += GetVersionsSpecificOffset 'UI_Spells'
+    }
+
+    foreach ($addr in $addresses) {
+        [Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$addr,$buffer,1,[ref]$read)
+        if ($buffer[0] -ne 1) {
+        if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,$addr,0,1,[ref]$read)) {
+                Write-Error 'Could not Close UI'
+            }
+        }
+    }
+}
+
+
+function Suspend-DiabloGame {
+if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    [int]$read = 0
+    $Buffer = [array]::CreateInstance([byte],1)
+    $Buffer[0]=2
+
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle, (GetVersionsSpecificOffset 'Pause'), $buffer, $buffer.length,[ref]$read)) {
+        Write-Error 'Unable to suspend game'
+    }
+}
+
+function Resume-DiabloGame {
+if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
+
+    [int]$read = 0
+    $Buffer = [array]::CreateInstance([byte],1)
+    $Buffer[0]=0
+
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle, (GetVersionsSpecificOffset 'Pause'), $buffer, $buffer.length,[ref]$read)) {
+        Write-Error 'Unable to suspend game'
+    }
+}
+
+function Test-ValidPlayer {
+param (
+    [ValidateRange(1,4)][byte]$PlayerIndex = 1,
+    $DiabloSession = $Global:DiabloSession
+)
+    [int]$read = 0
+    $buffer = [array]::CreateInstance([byte], 1)
+
+    $Offset=GetVersionsSpecificOffset 'PlayersCount'
+    if ($offset -eq -1) {
+        return $true
+    }
+
+    [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'PlayersCount'),$Buffer,1,[ref]$read) | Out-Null
+    if ($PlayerIndex -gt $buffer[0]) {
+        return $false
+    } else {
+        return $true
+    }
+}
+
+function Test-ValidSession {
+param (
+    $DiabloSession = $Global:DiabloSession
+)
+	if ($DiabloSession -eq $null) {
+        Write-Error 'No valid DiabloSession'
+        return
+    }
 }

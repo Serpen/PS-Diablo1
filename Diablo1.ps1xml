@@ -27,7 +27,7 @@
 				<TableRowEntry>
 					<TableColumnItems>
 						<TableColumnItem>
-							<PropertyName>Class</PropertyName>
+							<PropertyName>ItemClass</PropertyName>
 						</TableColumnItem>
 						<TableColumnItem>
 							<PropertyName>IdentifiedName</PropertyName>

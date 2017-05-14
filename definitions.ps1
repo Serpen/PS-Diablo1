@@ -1,77 +1,23 @@
 #definitions.ps1
 
-$VersionStringMatch = @{
-[int]0x499b28 = [Version]'1.0.0.0'
-[int]0x4A2D38 = [Version]'1.0.2.0'
-[int]0x49E020 = [Version]'1.0.3.0'
-[int]0x4a2d20 = [Version]'1.0.4.0'
-[int]0x4B05B0 = [Version]'1.0.5.0'
-[int]0x48F5C8 = [Version]'1.0.7.0'
-[int]0x49052c = [Version]'1.0.8.0'
-[int]0x48e58c = [Version]'1.0.9.0'
-#[int]0x48e58c = [Version]'1.0.9.1'
-[int]0x4A08C0 = [Version]"2.0.1.0"
-} #end hash
+$VersionTable = @(
+    @{Version='Debug 92.12.21.1'; VersionOffset=0x4AC150; VersionOffsetString='Version 96.12.21.1'; StartOffset=0x682830; FileHashMD5='EB73513BE5A3AE62E7BFEF63B51FA7FE'}
+    
+    @{Version='Release 1.00';     VersionOffset=0x499b28; VersionOffsetString='Diablo v1.00'; StartOffset=0x5330E0; FileHashMD5='6F0C02AAF2B29B1C17947AE15F4B82EE'}
+    @{Version='Release 1.02';     VersionOffset=0x4A2D38; VersionOffsetString='Diablo v1.02'; StartOffset=0xFE0060; FileHashMD5='040C81EB1666D66BD900351CB01DE10E'}
+    @{Version='Release 1.03';     VersionOffset=0x49E020; VersionOffsetString='Diablo v1.03'; StartOffset=0xFE0070; FileHashMD5='378FF4FE861032702520BCE313C1650C'}
+    @{Version='Release 1.04';     VersionOffset=0x4a2d20; VersionOffsetString='Diablo v1.04'; StartOffset=0xFD0070; FileHashMD5='907201801202D7A21D47E8BDAB31AC26'}
+    @{Version='Release 1.05';     VersionOffset=0x4B05B0; VersionOffsetString='Diablo v1.05'; StartOffset=0x6A8860; FileHashMD5='A353E8EBCED6054B4D25D6DD821BD00F'}
+    @{Version='Release 1.07';     VersionOffset=0x48F5C8; VersionOffsetString='Diablo v1.07'; StartOffset=0x6877A0; FileHashMD5='6D86757A5EF2AB91D32C7E01478D4C8F'}
+    @{Version='Release 1.08';     VersionOffset=0x49052c; VersionOffsetString='Diablo v1.08'; StartOffset=0x6884C0; FileHashMD5='8C5859E70E16849512C84AF3D76E26EE'}
+    @{Version='Release 1.09';     VersionOffset=0x48e58c; VersionOffsetString='Diablo v1.09'; StartOffset=0x686470; FileHashMD5='0D1A2B10F8B7FC1A388109BD8ABF05D1'}
+    @{Version='Release 1.09b';    VersionOffset=0x48e58c; VersionOffsetString='Diablo v1.09'; StartOffset=0x686470; FileHashMD5='DA62D5CD8BD71A0B66E6D4EF7A111233'}
 
-$start_offsetV100 = 0x5330E0
-$start_offsetV102 = 0xFE0070
-$start_offsetV103 = 0xFE0070
-$start_offsetV104 = 0xFD0070
-$start_offsetV105 = 0x6A8860
-$start_offsetV107 = 0x6877A0
-$start_offsetV108 = 0x6884C0
-$start_offsetV109 = 0x686470
-$start_offsetV201 = 0x1030070
+    @{Version='Alpha 4.1.8';      VersionOffset=0x4BC150; VersionOffsetString='V4.1.8'; StartOffset=0x6058a7; FileHashMD5='21563BAE0ED8580FC1D4B4A4344EB89A'}
+    @{Version='Alpha 4.1.9';      VersionOffset=0x4BC150; VersionOffsetString='V4.1.9'; StartOffset=0x6058a7; FileHashMD5='7101CDDAC45ED22227B53DE2D0F11667'}
+    @{Version='Beta 96.11.9.2';   VersionOffset=0x4C55B0; VersionOffsetString='Version 96.11.9.2';  StartOffset=0x62d8B0; FileHashMD5='EC794B3EAF4C3151E13C39014CBA8B29'}
+)
 
-# OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS OFFSETS 
-
-$PLAYERS_COUNT_OFFSET = -(0xDE44)
-
-$PLAYER_OFFSET = 0x54D8
-
-$PLAYERNAME_OFFSET = 0x118
-$PLAYERNAME_LENGTH = 15
-
-$DIFFICULT_OFFSET = -(0xde34)
-
-$POSSIBLE_IS_ALIVE_OFFSET = 0x115
-
-$DUNGENON_OFFSET = 0xC
-
-$TYPE_OFFSET = 0x138
-
-$POS_X_OFFSET = 0x10
-$POS_Y_OFFSET = 0x14
-
-$SPELLFLAGS_OFFSET = 0xBD+23+12 # 0xE0
-$SPELLS_OFFSET = 0x9A
-
-$STAT_OFFSET = 0x140
-
-$LEVELUP_OFFSET = 0x15C
-
-$LVL_OFFSET = 0x190
-
-$EXP_OFFSET = 0x194
-
-$GOLD_OFFSET = 0x1A4
-
-$WAYPOINT_OFFSET = -(0x5450)
-
-$TP_OFFSET = -(0x10308)
-
-$MONSTER_OFFSET = 0x39788
-
-$ITEM_SIZE = 0x170
-$INV_OFFSET = 0x354 # 0xDE0
-$INV_BACKPACK_OFFSET = 0xD64
-
-$BELT_OFFSET = 0x4701+15 # 0xDE0
-
-$QUESTS_OFFSET = 0x158c6
-$BUTCHER = 0x69BDA2
-$TAVERN=   0x69BDBA
-$KINGLEOR= 0x69BE32
 
 ## item ##
 $ITM_IDENTIFIED_OFFSET = 0x38
@@ -100,7 +46,12 @@ $TYPE_ENUM = 'Warrior','Rogue','Sorceror'
 $STAT_ENUM = "Strength","Magic","Dextery","Vitality"
 $DUNGEONTYPES_ENUM = 'Town','Cathedral','Catacombs','Caves','Hell'
 $QUESTREGION_ENUM = 'None','Skeleton King','Bone Chamber','Maze','Poisoned Water Supply','Archbishop Lazarus Lair'
+
 $Monster_ENUM = 'zombie','Ghoul','zombie','zombie','falspear','falspear','Devil Kin','falspear','Skeleton','Corpse Axe','Burning Dead','skelaxe','falsword','Carver','Devil Kin','falsword','scav','scav','scav','scav','Skeleton','Corpse Bow','Burning Dead','Horror','Skeleton King','skelsd','Burning Dead Captain','skelsd','tsneak','sneak','sneak','sneak','sneak','goatlord','Flesh King','goatmace','goatmace','goatmace','Fiend','Blink','bat','bat','goatbow','goatbow','goatbow','goatbow','acid','acid','acid','acid','sking','fatc','Overlord','fat','fat','fat','worm','worm','worm','worm','magma','magma','magma','magma','rhino','rhino','rhino','rhino','demskel','thin','thin','thin','fireman','fireman','fireman','fireman','thin','thin','thin','thin','bigfall','gargoyle','gargoyle','gargoyle','gargoyle','mega','mega','mega','Balrog','Cave Viper','snake','snake','Azure Drake','black','Doom Guard','Steel Lord','black','unrav','unrav','unrav','unrav','Succubus','succ','succ','succ','mage','mage','mage','mage','golem','diablo','darkmage'
+$MONSTER_ENUM = 'ZOMBIE','GHOUL','ROTTING_CARCASS','BLACK_DEATH','FALLEN_ONE_SPEAR','CARVER_SPEAR','DEVIL_KIN_SPEAR','DARK_ONE_SPEAR','SKELETON_AXE','CORPSE_AXE','BURNING_DEAD_AXE','HORROR_AXE','FALLEN_ONE_SWORD','CARVER_SWORD','DEVIL_KIN_SWORD','DARK_ONE_SWORD','SCAVENGER','PLAGUE_EATER','SHADOW_BEAST','BONE_GASHER','SKELETON_BOW','CORPSE_BOW','BURNING_DEAD_BOW','HORROR_BOW','SKELETON_CAPTAIN','CORPSE_CAPTAIN','BURNING_DEAD_CAPTAIN','HORROR_CAPTAIN','INVISIBLE_LORD','HIDDEN','STALKER','UNSEEN','ILLUSION_WEAVER','LORD_SAYTER','FLESH_CLAN_MACE','STONE_CLAN_MACE','FIRE_CLAN_MACE','NIGHT_CLAN_MACE','FIEND','BLINK','GLOOM','FAMILIAR','FLESH_CLAN_BOW','STONE_CLAN_BOW','FIRE_CLAN_BOW','NIGHT_CLAN_BOW','ACID_BEAST','POISON_SPITTER','PIT_BEAST','LAVA_MAW','SKELETON_KING','THE_BUTCHER','OVERLORD','MUD_MAN','TOAD_DEMON','FLAYED_ONE','WYRM','CAVE_SLUG','DEVIL_WYRM','DEVOURER','MAGMA_DEMON','BLOOD_STONE','HELL_STONE','LAVA_LORD','HORNED_DEMON','MUD_RUNNER','FROST_CHARGER','OBSIDIAN_LORD','BONE_DEMON','RED_DEATH','LITCH_DEMON','UNDEAD_BALROG','INCINERATOR','FLAME_LORD','DOOM_FIRE','HELL_BURNER','RED_STORM','STORM_RIDER','STORM_LORD','MAELSTORM','DEVIL_KIN_BRUTE','WINGED_DEMON','GARGOYLE','BLOOD_CLAW','DEATH_WING','SLAYER','GUARDIAN','VORTEX_LORD','BALROG','CAVE_VIPER','FIRE_DRAKE','GOLD_VIPER','AZURE_DRAKE','BLACK_KNIGHT','DOOM_GUARD','STEEL_LORD','BLOOD_KNIGHT','UNRAVELER','HOLLOW_ONE','PAIN_MASTER','REALITY_WEAVER','SUCCUBUS','SNOW_WITCH','HELL_SPAWN','SOUL_BURNER','COUNSELOR','MAGISTRATE','CABALIST','ADVOCATE','GOLEM','THE_DARK_LORD','THE_ARCH_LITCH_MALIGNUS'
+#$MONSTER_TYP_ENUM = '0-Zombie','1-','2-Skeleton','3-','4-Scavenger','5-'.'6-','7-','8','9-Fallen One',10,11,12,13,14,15,16,17,18,19,'20-Dog','21','22-Golem',23
+$MONSTER_TYP_ENUM = 0,1,2,3,'4',5,6,7,8,9,10,11,'12-Golem',13,14,15,16,17,18,19,20,211,22,23,24,'25-Dog','26-Doomgaurd',27,'28-Lachdanan',29
+
 $DIFFICULTY_ENUM = 'Normal','Nightmare','Hell'
 $QUEST_ENUM = 'THE_MAGIC_ROCK','BLACK_MUSHROOM','GHARBAD_THE_WEAK','ZHAR_THE_MAD','LACHDANAN','DIABLO','THE_BUTCHER','OGDENS_SIGN','HALLS_OF_THE_BLIND','VALOR','ANVIL_OF_FURY','WARLORD_OF_BLOOD','THE_CURSE_OF_KING_LEORIC','POISONED_WATER_SUPPLY','THE_CHAMBER_OF_BONE','ARCHBISHOP_LAZARUS'
 $QUEST_STATE= 'inactive','waiting', 'active', 'accomplished'
@@ -109,250 +60,19 @@ $QUEST_STATE= 'inactive','waiting', 'active', 'accomplished'
 $SPELLBOX_X = 1,1,2,2,0,2,2,2,0,3,3,3,3,3,3,0,0,4,0,1,4,0,4,4,0,1,1,1,3,1,1,2,2,1,4,4
 $SPELLBOX_Y = 2,5,4,6,0,2,5,7,0,1,2,4,7,6,5,0,0,1,0,7,2,0,3,4,0,1,1,1,3,3,4,1,3,6,6,5
 
-$SpecialAbility = @{
-    0x0='none'
-    0x1='Infrasion'
-    0x2='random life stealing'
-    0x4='random speed arrows'
-    0x8='fire arrow damage'
-    0x10='fire hit damage'
-    0x20='lighning hit damage'
-    0x40='constantly lose life'
-    0x100='user can''t heal' #web
-    0x800='knocks target back'
-    0x1000='Hit monsters doesn''t heal' #web
-    0x2000='hit steals 3% mana'
-    0x4000='hit steals 5% mana'
-    0x8000='hit steals 3% life'
-    0x10000='hit steals 5% life'
-    0x20000="Quick attack"
-    0x40000='fast attack'
-    0x80000='faster attack'
-    0x100000='fastest attack'
-    0x200000='fast hit recovery'
-    0x400000='faster hit recovery'
-    0x800000="Fastest hit recovery"
-    0x1000000='fast block'
-    0x2000000='lightning arrow damage'
-    0x4000000='attacker takes 1-3 damage' #web thorns 
-    0x8000000='user loses all mana'
-    0x10000000='absorbs half of trap damage'
-    0x40000000='+200% Damage vs. demons'
-    0x80000000='user loses all resistances'
-}
+$MONSTER_TYP_ENUM = '0','1','2','3','4','5','6','7','8','9','10',
+    '11','12','13','14','15','16','17','18','19','20',
+    '21','22','23','24-shadow beast','25','26-sir gorash','27-Blustweaver','28','29-baron','30-snipeater',
+    '31-moonbender','32-zhar/snotspil/unique','33-golem','34-madeye the dead/hellspawnm','35-succu','36-doom guard','37','38-winged demon','39','40',
+    '41-magmademon','42-mudman','43-lava maw','44-familiar','45-blink','46-illusion weaver','47-burning dead captain','48-bone gasher','49-shadowbeast','50-horror',
+    '51-dark one','52-zombie','53','54','55','56','57','58','59','60',
+    '61','62','63','64','65','66','67','68','69','70',
+    '71-overlord','72','73','74','75','76','77','78','79','80',
+    '81','82','83','84','85','86','87','88','89','90',
+    '91','92','93','94','95','96','97','98','99','100',
+    '101','102','103','104','105','106','107','108','109','110',
+    '111','112','113','114','115','116','117','118','119-bloodstone','120',
+    '121','122','123','124','125','126','127','128','129','130',
+    '131','132','133-Golem','134-Advocate','135-Hell Spawn/Blood Knight','136','137-Diablo','138','139','140'
 
-$itemClass = @{
-    00 = 'Unwearable'
-    01  ='Sword'
-    02  ='Axe'
-    03  ='Bow'
-    04 ='Club'
-    05 ='Shield'
-    06  = 'Light Amor'
-    07  ='Cap'
-    08 = 'Mail'
-    09 = 'Heavy Armor'
-    0xA ='Staff'
-    0xB = 'Gold'
-    0xc = 'Ring'
-    0xd = 'Amulett'
-	0xFF = 'invalid'
-}
-
-$itemCode = @{
-    0x0 = 'none'
-    0x1 = 'use first'
-    0x2 = 'full healing'
-    0x3 = 'healing'
-    0x6 = 'mana'
-    0x7 = 'full mana'
-    0xA = 'elixir strength'
-    0xB = 'elixir magic'
-    0xC = 'Elixir of Dexterity'
-    0xd = 'elixir vitality'
-    0x12= 'Rejuvenation'
-    0x13= 'Full Rejuvenation'
-    0x14 = 'use last'
-    0x15 = 'scroll'
-    0x16 = 'scroll with target'
-    0x17 = 'staff'
-    0x18 = 'book'
-    0x19 = 'ring'
-    0x1a = 'amulet'
-    0x1b = 'unique'
-    0x1c = 'potion of Healing something'
-    0x2a = 'map of the stars'
-    0x2b = 'ear'
-    0x2c = 'spectral exlixir'
-}
-
-
-$itemType = @{
-0 = 'Gold'
-1 = 'Short Sword' #hacked?
-2 = 'Buckler'  #hacked?
-3 = 'Club' #mem
-4 = 'Short Bow' #mem
-5 = 'Short Bow' #mem
-6 = 'Cleaver'
-7 = 'The Undead Crown'
-8 = 'Empyrean Band'
-9 = 'Magic Rock'
-10 = 'Optic Amulet'
-11 = 'Ring of Truth'
-12 = 'Tavern Sign'
-13 = 'Harlequin Crest'
-14 = 'Veil of Steel'
-15 = 'Golden Elixir'
-16 = 'Anvil of Fury'
-17 = 'Black Mushroom'
-18 = 'Brain'
-19 = 'Fungal Tome'
-20 = 'Spectral Elixir'
-21 = 'Blood Stone'
-22 = 'Map of the Stars'
-23 = 'Ear/Heart'  #hacked?
-24 = 'Potion of Healing'
-25 = 'Potion of Mana'
-26 = 'Scroll of Identify'   #mem
-27 = 'Scroll of Town Portal'
-28 = 'Arkaine''s Valor'
-29 = 'Potion of Full Healing' #Mana
-30 = 'Potion of Full Mana'
-31 = 'Griswold''s Edge'
-32 = 'Lightforge'
-33 = 'Staff of Lazarus'
-34 = 'Scroll of Ressurect' #hacked
-36 = 'Crashed' #hacked
-48 = 'Cap'
-49 = 'Skull Cap'
-50 = 'Helm'
-51 = 'Full Helm'
-52 = 'Crown'
-53 = 'Great Helm'
-54 = 'Cape'
-55 = 'Rags'
-56 = 'Cloak'
-57 = 'Robe'
-58 = 'Quilted Armor'
-#Amor mem
-59 = 'Leather Armor'
-60 = 'Hard Leather Armor'
-61 = 'Studded Leather Armor'
-62 = 'Ring Mail'
-#Mail
-63 = 'Chain Mail'
-64 = 'Scale Mail'
-65 = 'Breast Plate'
-#Plate
-66 = 'Splint Mail'
-67 = 'Plate Mail'
-68 = 'Field Plate'
-69 = 'Gothic Plate'
-70 = 'Full Plate Mail'
-71 = 'Buckler/Shield'
-72 = 'Small Shield'
-73 = 'Large Shield'
-74 = 'Kite Shield'
-75 = 'Tower Shield'
-76 = 'Gothic Shield'
-77 = 'Elixir of Vitality' #hacked
-78 = 'Potion of Full Healing'
-81 = 'Potion of Rejuvenation'
-82 = 'Potion of Full Rejuvenation'
-83 = 'Elixir of Strength'
-84 = 'Elixir of Magic'
-85 = 'Elixir of Dexterity'
-86 = 'Elixir of Vitality'
-87 = 'Scroll of Healing'
-88 = 'Scroll of Lightning'
-89 = 'Scroll of Identify'
-90 = 'Scroll of Resurrect'
-91 = 'Scroll of Fire Wall'
-92 = 'Scroll of Inferno'
-93 = 'Scroll of Town Portal' #hacked
-94 = 'Scroll of Flash'
-95 = 'Scroll of Infravision'
-96 = 'Scroll of Phasing'
-97 = 'Scroll of Mana Shield'
-98 = 'Scroll of Flame Wave'
-99 = 'Scroll of Fireball'
-100 = 'Scroll of Stone Curse'
-101 = 'Scroll of Chain Lightning'
-102 = 'Scroll of Guardian'
-103 = 'Non Item'
-104 = 'Scroll of Nova'
-105 = 'Scroll of Golem'
-107 = 'Scroll of Teleport'
-108 = 'Scroll of Apocalypse'
-109 = 'Book'
-110 = 'Book'
-111 = 'Book'
-112 = 'Book' #hacked
-113 = 'Dagger'
-114 = 'Short Sword'
-115 = 'Falchion'
-116 = 'Scimitar'
-117 = 'Claymore'
-118 = 'Blade'
-119 = 'Sabre'
-120 = 'Long Sword'
-121 = 'Broad Sword'
-122 = 'Bastard Sword'
-123 = 'Two-Handed Sword'
-124 = 'Great Sword'
-125 = 'Small Axe'
-126 = 'Axe'
-127 = 'Large Axe'
-128 = 'Broad Axe'
-129 = 'Battle Axe'
-130 = 'Great Axe'
-131 = 'Mace'
-132 = 'Morning Star'
-133 = 'War Hammer'
-#Hammer
-134 = 'Spiked Club'
-135 = 'Club'
-136 = 'Flail'
-137 = 'Maul'
-138 = 'Short Bow/Bow'
-139 = 'Hunter''s Bow'
-140 = 'Long Bow'
-141 = 'Composite Bow'
-142 = 'Short Battle Bow'
-143 = 'Long Battle Bow'
-144 = 'Short War Bow'
-145 = 'Long War Bow'
-146 = 'Short Staff'
-#Staff
-147 = 'Long Staff'
-148 = 'Composite Staff'
-149 = 'Quarter Staff'
-150 = 'War Staff'
-151 = 'Ring'
-152 = 'Ring'
-153 = 'Ring'
-154 = 'Amulet'
-155 = 'Amulet'
-}
-
-$equip_type = @(
-'none',
-"One Handed",
-"Tow Handed",
-"Chest",
-"Head",
-"Ring",
-"Amulet",
-"Unequipable",
-"Belt"
-)
-
-$item_category = @(
-"none",
-"weapon",
-"Armor",
-"Jewerly or consumable",
-"Gold",
-"Chest"
-)
+$DIR = 'South','South West','West','North West','North','North East','East','South East'
