@@ -1,5 +1,5 @@
 ﻿
-$PLAYERS_COUNT_OFFSET = -(0xDE44)
+#$PLAYERS_COUNT_OFFSET = -(0xDE44)
 
 $PLAYER_OFFSET = 0x54D8
 
@@ -30,25 +30,25 @@ $EXP_OFFSET = 0x194
 
 $GOLD_OFFSET = 0x1A4
 
-$WAYPOINT_OFFSET = -(0x5450)
+#$WAYPOINT_OFFSET = -(0x5450)
 
-$TP_OFFSET = -(0x10308)
+#$TP_OFFSET = -(0x10308)
 
-$MONSTER_OFFSET = 0x39788
+#$MONSTER_OFFSET = 0x39788
 $MONSTER_SIZE = 0xE4
 
 $ITEM_SIZE = 0x170
 $INV_OFFSET = 0x354 # 0xDE0
-$INV_BACKPACK_OFFSET = 0xD64
+#$INV_BACKPACK_OFFSET = 0xD64
 
-$BELT_OFFSET = 0x4701+15 # 0xDE0
+#$BELT_OFFSET = 0x4701+15 # 0xDE0
 
-$QUESTS_OFFSET = 0x158c6
+#$QUESTS_OFFSET = 0x158c6
 
-$_DBG_HP = 0x682998
-$_DBG_HP2 = 0x6829A0
+#$_DBG_HP = 0x682998
+#$_DBG_HP2 = 0x6829A0
 
-$DBG_ROW = 0x5e769c
+#$DBG_ROW = 0x5e769c
 
 function GetVersionsSpecificOffset {
 param (
@@ -93,7 +93,23 @@ param (
             }            
         }
         "Difficulty" {
-            return $DiabloSession.StartOffset + $DIFFICULT_OFFSET
+            switch ($DiabloSession.Version) {
+                #'Debug 92.12.21.1' {}
+                #'Release 1.00'     {return 0x5903E4}
+                'Release 1.00'     {return 0x61dba0}
+                'Release 1.02'     {return 0x606254}
+                #'Release 1.03'     {}
+                #'Release 1.04'     {}
+                #'Release 1.05'     {}
+                #'Release 1.07'     {}
+                #'Release 1.08'     {}
+                #'Release 1.09'     {return 0x67863c}
+                #'Release 1.09b'    {return 0x67863c}
+                #'Alpha 4.1.8'      {}
+                #'Alpha 4.1.9'      {}
+                #'Beta 96.11.9.2'   {}
+                default             {$DiabloSession.StartOffset + $DIFFICULT_OFFSET}
+            }
         }
         "Entrance" {
             return $DiabloSession.StartOffset - $WAYPOINT_OFFSET

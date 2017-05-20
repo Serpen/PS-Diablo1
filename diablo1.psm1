@@ -107,7 +107,7 @@ param (
     [byte]$playersCount = $buffer[0]
 
     Write-Verbose "Found $playersCount Players"
-
+    
     for ([int]$i = 0; $i -lt $playersCount; $i++) {
         [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Players' $i),$Buffer,$Buffer.length,[ref]$read) | Out-Null
         New-Object PSobject -Property @{'Index'=($i+1); 'Name'=(ConvertFrom-DiabloString $Buffer 0 $PLAYERNAME_LENGTH)}
@@ -119,7 +119,6 @@ function Get-DiabloDifficulty {
 param (
     $DiabloSession = $Global:DiabloSession
 )
-
     if ($DiabloSession -eq $null) {
         Write-Error 'No valid DiabloSession'
         return
@@ -561,7 +560,7 @@ param (
 
     [int]$read = 0
 
-    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'LevelUpPoints'),$Points,1,[ref]$read)) {
+    if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset 'Character')+$LEVELUP_OFFSET,$Points,1,[ref]$read)) {
         Write-Error 'Could not set DiabloPoints'
     }
     
@@ -1107,5 +1106,22 @@ param (
 	if ($DiabloSession -eq $null) {
         Write-Error 'No valid DiabloSession'
         return
+    }
+}
+
+function ReadMemory {
+param (
+    $DiabloSession = $Global:DiabloSession,
+    [String]$OffsetType,
+    [uint]$n,
+    [uint]$Length
+)
+    $buffer = [array]::CreateInstance([byte],$Length)
+    [int]$read = 0
+
+    $ret = [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($DiabloSession.ProcessMemoryHandle,(GetVersionsSpecificOffset $OffsetType $n),$buffer,$buffer.length,[ref]$read) | Out-Null
+    
+    if ($read -ne $Length) {
+
     }
 }
