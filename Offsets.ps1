@@ -1,124 +1,65 @@
-﻿
-#$PLAYERS_COUNT_OFFSET = -(0xDE44)
-
+﻿#$PLAYERS_COUNT_OFFSET = -(0xDE44)
+#für 1.09
+$SELECTED_POS_IN_MENU = 0x63446c
+$MUSIC_VOL = 0x48e240 #C=Sound, 258=GAMMA
 $PLAYER_OFFSET = 0x54D8
-
-$PLAYERNAME_OFFSET = 0x118
+$COLYCLE = 0x48e268 # BF=OFF, A0=ON
 $PLAYERNAME_LENGTH = 15
-
-$DIFFICULT_OFFSET = -(0xde34)
-
 $POSSIBLE_IS_ALIVE_OFFSET = 0x115
-
-$DUNGENON_OFFSET = 0xC
-
-$TYPE_OFFSET = 0x138
-
-$POS_X_OFFSET = 0x10
-$POS_Y_OFFSET = 0x14
-
 $SPELLFLAGS_OFFSET = 0xBD+23+12 # 0xE0
 $SPELLS_OFFSET = 0x9A
-
-$STAT_OFFSET = 0x140
-
 $LEVELUP_OFFSET = 0x15C
-
-$LVL_OFFSET = 0x190
-
-$EXP_OFFSET = 0x194
-
-$GOLD_OFFSET = 0x1A4
-
-#$WAYPOINT_OFFSET = -(0x5450)
-
-#$TP_OFFSET = -(0x10308)
-
 #$MONSTER_OFFSET = 0x39788
 $MONSTER_SIZE = 0xE4
-
 $ITEM_SIZE = 0x170
-$INV_OFFSET = 0x354 # 0xDE0
-#$INV_BACKPACK_OFFSET = 0xD64
 
-#$BELT_OFFSET = 0x4701+15 # 0xDE0
+$versionsMatrix =[System.Collections.Generic.Dictionary[[string],[int[]]]]::new(10)
+                                           #base     #BELT      #verof    #Differe   entrance  #eqiptm    #-lup, pause     play#     playe  pos   quest     backp  store       tp          monster
+$versionsMatrix.Add('Alpha 4.1.8',       @(0x6058a7, 000000000, 0x4BC150, -(0xde34), -(0x5450), 0x0533434, 0x15C, 00000000, 00000000, 0x118, 0000, 00000000, 00000, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Alpha 4.1.9',       @(0x6058a7, 000000000, 0x4BC150, -(0xde34), -(0x5450), 0x0533434, 0x15C, 00000000, 00000000, 0x118, 0000, 00000000, 00000, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Beta 96.11.9.2',    @(0x62d8B0, 0x04BC150, 0x4C55B0, -(0xde34), -(0x5450), 0x0533434, 0x15C, 00000000, 00000000, 0x118, 0000, 00000000, 00000, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Debug 92.12.21.1' , @(0x682830, 0x0004710, 0x4AC150, -(0xde34), -(0x5450), 0x0000354, 0x15C, 00000000, 0x05d2f0, 0x118, 0x30, 0x697ba0, 0xed4,-(0x89a38), 000000000, (0x04C9B90-32)))
+                                                                                                                                                                                        
+$versionsMatrix.Add('Release 1.00',      @(0x5330E0, 0x0004710, 0x499b28, 0x005d304, 0x0606254, 0x0000354, 0x15C, 0x4843f8, 0x05d2f0, 0x118, 0x30, 0x015370, 0xed4, 0x0025828, 0x4b80180, 000000000))
+$versionsMatrix.Add('Release 1.02',      @(0xFE0060, 0x1da4720, 0x4A2D38, 000000000, -(0x5450), 0x0000354, 0x15C, 00000000, 0x606240, 0x118, 0000, 0x616ee8, 00000, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Release 1.03',      @(00000000, 000000000, 0x49E020, 000000000, -(0x5450), 0x0533434, 0x15C, 00000000, 0x57EDF0, 0x118, 0000, 0x536d68, 00000, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Release 1.04',      @(00000000, 000000000, 0x4a2d20, 000000000, -(0x5450), 0x0533434, 0x15C, 00000000, 0x6066B0, 0x118, 0000, 0x617358, 00000, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Release 1.05',      @(0x6A8860, 0x0004710, 0x4B05B0, -(0xde34), -(0x5450), 0x0000914, 0x15C, 00000000, 0x69AA18, 0x118, 0x30, 0x6be100, 0xD64, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Release 1.07',      @(0x6877A0, 0x0004710, 0x48F5C8, -(0xde34), -(0x5450), 0x0000914, 0x15C, 00000000, 0x679958, 0x118, 0x30, 0x69d040, 0xD64, 000000000, 000000000, 000000000))
+$versionsMatrix.Add('Release 1.08',      @(0x6884C0, 0x0004710, 0x49052c, -(0xde34), -(0x5450), 0x0000914, 0x15C, 00000000, 0x67a698, 0x118, 0x30, 0x69dd60, 0xD64, 000000000, 000000000, 000000000))
+#                                                                                                                                                          , 00000, 000000000, 000000000, 000000000000
+$versionsMatrix.Add('Release 1.09',      @(0x686470, 0x0004710, 0x48e58c, -(0xde34), +0x04939DC, 0x914   , 0x15C, 0x525740,+0x686436, 0x118, 0x30, 0x0158a0, 0xed4, 0x0018ca8, 0x0015828, 000000000))
+#                                                                          0x5b70e4
+#, 000000000
 
-#$QUESTS_OFFSET = 0x158c6
-
-#$_DBG_HP = 0x682998
-#$_DBG_HP2 = 0x6829A0
-
-#$DBG_ROW = 0x5e769c
 
 function GetVersionsSpecificOffset {
 param (
     [String]$Type,
     [byte]$n =1,
-    $DiabloSession = $Global:DiabloSession
+    $D1Session = $Global:D1Session
 )
     switch ($Type) {
         "Belt" {
-            switch ($DiabloSession.Version) {
-                'Debug 92.12.21.1' {return 0x682800}
-                #'Release 1.00' {}
-                'Release 1.02' {0x1066680 + $n * $ITEM_SIZE}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                #'Release 1.09' {}
-                #'Release 1.09b' {}
-                'Alpha 4.1.8' {return -1}
-                'Alpha 4.1.9' {return -1}
-                default {return $DiabloSession.StartOffset + $BELT_OFFSET + $n * $ITEM_SIZE}
-            }
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][1] + $n * $ITEM_SIZE
         }
         "Character" {
-            switch ($DiabloSession.Version) {
-                'Debug 92.12.21.1' {return 0x682830}
-                'Release 1.00'     {return 0x5330E0}
-                'Release 1.02'     {return 0xFE0760}
-                'Release 1.03'     {return 0xFE0070}
-                'Release 1.04'     {return 0xFD0070}
-                'Release 1.05'     {return 0x6a8860}
-                'Release 1.07'     {return 0x6877a0}
-                'Release 1.08'     {return 0x6884C0}
-                'Release 1.09'     {$DiabloSession.StartOffset + ($n-1) * $PLAYER_OFFSET}
-                'Release 1.09b'    {$DiabloSession.StartOffset + ($n-1) * $PLAYER_OFFSET}
-                'Alpha 4.1.8'      {return -1}
-                'Alpha 4.1.9'      {return -1}
-                'Beta 96.11.9.2'   {return 0x62d8B0}
-                default            {return $DiabloSession.StartOffset + ($n-1) * $PLAYER_OFFSET}
-            }            
+            return $D1Session.StartOffset + ($n-1) * $PLAYER_OFFSET - 41
         }
         "Difficulty" {
-            switch ($DiabloSession.Version) {
-                #'Debug 92.12.21.1' {}
-                #'Release 1.00'     {return 0x5903E4}
-                'Release 1.00'     {return 0x61dba0}
-                'Release 1.02'     {return 0x606254}
-                #'Release 1.03'     {}
-                #'Release 1.04'     {}
-                #'Release 1.05'     {}
-                #'Release 1.07'     {}
-                #'Release 1.08'     {}
-                #'Release 1.09'     {return 0x67863c}
-                #'Release 1.09b'    {return 0x67863c}
-                #'Alpha 4.1.8'      {}
-                #'Alpha 4.1.9'      {}
-                #'Beta 96.11.9.2'   {}
-                default             {$DiabloSession.StartOffset + $DIFFICULT_OFFSET}
-            }
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][3]
         }
         "Entrance" {
-            return $DiabloSession.StartOffset - $WAYPOINT_OFFSET
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][4]
         }
-        "Inventory" {
-            return $DiabloSession.StartOffset + $INV_OFFSET + $n * $ITEM_SIZE
+        "Inventory" { #equip
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][5] + $n * $ITEM_SIZE
+        }
+        "LevelUpPoints" {
+            return $versionsMatrix[$D1Session.Version][6]
         }
         "ItemsOnFloor" {
-            switch ($DiabloSession.Version) {
+            switch ($D1Session.Version) {
                 'Debug 92.12.21.1' {return 0x5F6D94}
                 #'Release 1.00' {}
                 #'Release 1.02' {}
@@ -127,128 +68,63 @@ param (
                 #'Release 1.05' {}
                 #'Release 1.07' {}
                 #'Release 1.08' {}
-                #'Release 1.09' {}
-                #'Release 1.09b' {return }
+                'Release 1.09' {return 0x640538 + $n * $ITEM_SIZE}
+                'Release 1.09b' {return 0x640538 + $n * $ITEM_SIZE}
                 #'Alpha 4.1.8' {}
                 #'Alpha 4.1.9' {}
                 default {return 0x5F6D94}
             }
         }
-        "LevelUpPoints" {
-            return $DiabloSession.StartOffset + $LEVELUP_OFFSET
+        'Debug1' {
+            return $D1Session.StartOffset + $EXP_OFFSET - 4 -96 -24-4-8-4-12-7*4-68-1-(5*4+2+34*4+1+1+4*8+4)
         }
+        
         "MonsterKills" {
-            if ($DiabloSession.Version -like 'Release 1.09*') {
-                return $DiabloSession.StartOffset - $MONSTER_OFFSET
-            } else {
-                return 0x526240 + 0
+            switch ($D1Session.Version) {
+                #'Debug 92.12.21.1' {return 0x5F6D94}
+                #'Release 1.00' {}
+                #'Release 1.02' {}
+                #'Release 1.03' {}
+                #'Release 1.04' {}
+                #'Release 1.05' {}
+                #'Release 1.07' {}
+                #'Release 1.08' {}
+                'Release 1.09'  {return 0x64ccf0 + $n * 4}
+                'Release 1.09b' {return 0x64ccf0 + $n * 4}
+                #'Alpha 4.1.8' {}
+                #'Alpha 4.1.9' {}
+                default {return 0x64ccf0 + $n * 4}
             }
         }
         "Pause" {
-            switch ($DiabloSession.Version) {
-                #'Debug 92.12.21.1' {}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x525740}
-                'Release 1.09b' {return 0x525740}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return 0x525740}
-            }
+            return $versionsMatrix[$D1Session.Version][7]
         }
         "PlayersCount" {
-            switch ($DiabloSession.Version) {
-                'Debug 92.12.21.1' {return -1}
-                'Release 1.00' {return 0x5903D0}
-                'Release 1.02' {return 0x606240}
-                'Release 1.03' {return 0x57EDF0}
-                'Release 1.04' {return 0x6066B0}
-                'Release 1.05' {return 0x69AA18}
-                'Release 1.07' {return 0x679958}
-                'Release 1.08' {return 0x67a698}
-                #'Release 1.09' {return $DiabloSession.StartOffset + $PLAYERS_COUNT_OFFSET}
-                #'Release 1.09b' {return $DiabloSession.StartOffset + $PLAYERS_COUNT_OFFSET}
-                'Alpha 4.1.8' {return -1}
-                'Alpha 4.1.9' {return -1}
-                'Beta 96.11.9.2'   {return -1}
-                default {return $DiabloSession.StartOffset + $PLAYERS_COUNT_OFFSET}
-            }
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][8]
         }
         "Players" {
-            if ($DiabloSession.Version -like 'Release 1.09*') {
-                return $DiabloSession.StartOffset + $PLAYERNAME_OFFSET + ($n)*$PLAYER_OFFSET
-            } elseif ($DiabloSession.Version -like 'Release 1.01') {
-                return $DiabloSession.StartOffset + $PLAYERNAME_OFFSET + ($n)*$PLAYER_OFFSET
-            } elseif ($DiabloSession.Version -like 'Release 1.02') {
-                return $DiabloSession.StartOffset + $PLAYERNAME_OFFSET + ($n)*$PLAYER_OFFSET
-            } else {
-                return $DiabloSession.StartOffset + $PLAYERNAME_OFFSET + ($n)*$PLAYER_OFFSET
-            }
-            
+            #return $versionsMatrix[$D1Session.Version][0] + $versionsMatrix[$D1Session.Version][9] + $n * $PLAYER_OFFSET    
         }
         "Position" {
-            switch ($DiabloSession.Version) {
-                'Debug 92.12.21.1' {return 0x682800}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x686440}
-                'Release 1.09b' {return 0x686440}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return $DiabloSession.StartOffset - 0x30 - ($n-1) * $n}
-            }            
+            return $D1Session.StartOffset - $versionsMatrix[$D1Session.Version][10]         
         }
         "Quest" {
-            switch ($DiabloSession.Version) {
-                'Debug 92.12.21.1' {return 0x697ba0}
-
-                'Release 1.00' {return 0x548450}
-                'Release 1.02' {return 0x616ee8}
-                'Release 1.03' {return 0x536d68}
-                'Release 1.04' {return 0x617358}
-                'Release 1.05' {return 0x6be100}
-                'Release 1.07' {return 0x69d040}
-                'Release 1.08' {return 0x69dd60}
-                'Release 1.09' {return 0x69bd10}
-                'Release 1.09b' {return 0x69bd10}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                #'Beta 96.11.9.2' {}
-                default {return -1}
-            }            
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][11]           
         }
         "Rucksack" {
-            return $DiabloSession.StartOffset + $INV_BACKPACK_OFFSET + $n * $ITEM_SIZE
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][12] + $n * $ITEM_SIZE
         }
         "Spell" {
-            return $DiabloSession.StartOffset + $SPELLS_OFFSET
+            return $D1Session.StartOffset + $SPELLS_OFFSET
         }
         "Store" {
-            switch ($DiabloSession.Version) {
-                'Release 1.00' {return 0x558908}
-                'Release 1.09' {return $DiabloSession.StartOffset + 0x18CA8}
-                'Release 1.09b' {return $DiabloSession.StartOffset + 0x18CA8}
-            }
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][13]
         }
         "TownPortal" {
-            if ($DiabloSession.Version -like 'Release 1.09*') {
-                return $DiabloSession.StartOffset + $TP_OFFSET + ($n-1)*5
-            } else {
-                return 0x58AB98
-            }
+            return $D1Session.StartOffset + $versionsMatrix[$D1Session.Version][14] + ($n-1)*5
         }
         "UI_Char" {
-            switch ($DiabloSession.Version) {
+            switch ($D1Session.Version) {
                 #'Debug 92.12.21.1' {}
                 #'Release 1.00' {}
                 #'Release 1.02' {}
@@ -265,92 +141,22 @@ param (
             }
         }
         "UI_Spellbook" {
-            switch ($DiabloSession.Version) {
-                #'Debug 92.12.21.1' {}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x4B8968}
-                'Release 1.09b' {return 0x4B8968}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return 0x4B8968}
-            }
+            return 0x4B8968
         }
         "UI_AutoMap" {
-            switch ($DiabloSession.Version) {
-                #'Debug 92.12.21.1' {}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x4B7E48}
-                'Release 1.09b' {return 0x4B7E48}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return 0x4B7E48}
-            }
+            return 0x4B7E48
         }
         "UI_Spells" {
-            switch ($DiabloSession.Version) {
-                #'Debug 92.12.21.1' {}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x4B8C98}
-                'Release 1.09b' {return 0x4B8C98}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return 0x4B8C98}
-            }
+            return 0x4B8C98
         }
         "UI_Inventory" {
-            switch ($DiabloSession.Version) {
-                #'Debug 92.12.21.1' {}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x634CB8}
-                'Release 1.09b' {return 0x634CB8}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return 0x634CB8}
-            }
+           return 0x634CB8
         }
         "UI_Questlog" {
-            switch ($DiabloSession.Version) {
-                #'Debug 92.12.21.1' {}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x69BD04}
-                'Release 1.09b' {return 0x69BD04}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return 0x69BD04}
-            }
+            return 0x69BD04
         }
         "LogLine" {
-            switch ($DiabloSession.Version) {
+            switch ($D1Session.Version) {
                 'Debug 92.12.21.1' {return 0x5E769C}
                 #'Release 1.00' {}
                 #'Release 1.02' {}
@@ -359,32 +165,41 @@ param (
                 #'Release 1.05' {}
                 #'Release 1.07' {}
                 #'Release 1.08' {}
-                #'Release 1.09' {}
-                #'Release 1.09b' {}
+                'Release 1.09' {return 0x69b7d4}
+                'Release 1.09b' {return 0x69b7d4}
                 #'Alpha 4.1.8' {}
                 #'Alpha 4.1.9' {}
                 default {}
             }
         }
         "monsters" {
-            switch ($DiabloSession.Version) {
-                'Debug 92.12.21.1' {0x4C9B90 } #0x4CBE4C}
-                #'Release 1.00' {}
-                #'Release 1.02' {}
-                #'Release 1.03' {}
-                #'Release 1.04' {}
-                #'Release 1.05' {}
-                #'Release 1.07' {}
-                #'Release 1.08' {}
-                'Release 1.09' {return 0x64D350}
-                'Release 1.09b' {return 0x64D350}
-                #'Alpha 4.1.8' {}
-                #'Alpha 4.1.9' {}
-                default {return 0x64d354}
+            return $versionsMatrix[$D1Session.Version][15] + ($n-1)*0xE4
+            return 0x64d354
+        }
+        
+        "GameSettings" {
+            switch ($D1Session.Version) {
+                #'Debug 92.12.21.1' {}
+                'Release 1.00'     {0x499fc8}
+                #'Release 1.02'     {}
+                #'Release 1.03'     {}
+                #'Release 1.04'     {}
+                #'Release 1.05'     {}
+                #'Release 1.07'     {}
+                #'Release 1.08'     {}
+                'Release 1.09'     {return 0x48e240}
+                'Release 1.09b'    {return 0x48e240}
+                #'Alpha 4.1.8'      {}
+                #'Alpha 4.1.9'      {}
+                #'Beta 96.11.9.2'   {}
+                default             {return -1}
             }
         }
         "_template_" {
-            switch ($DiabloSession.Version) {
+            switch ($D1Session.Version) {
+                #'Alpha 4.1.8'      {}
+                #'Alpha 4.1.9'      {}
+                #'Beta 96.11.9.2'   {}
                 #'Debug 92.12.21.1' {}
                 #'Release 1.00'     {}
                 #'Release 1.02'     {}
@@ -395,9 +210,6 @@ param (
                 #'Release 1.08'     {}
                 #'Release 1.09'     {}
                 #'Release 1.09b'    {}
-                #'Alpha 4.1.8'      {}
-                #'Alpha 4.1.9'      {}
-                #'Beta 96.11.9.2'   {}
                 default             {return -1}
             }
         }

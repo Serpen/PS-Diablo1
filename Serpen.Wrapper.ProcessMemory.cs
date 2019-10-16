@@ -8,7 +8,8 @@ public class ProcessMemory {
     public const uint VirtualMemoryWrite = 0x00000020;
 
 	[DllImport("kernel32.dll", SetLastError = true)]
-	public static extern bool ReadProcessMemory(
+	[return: MarshalAs(UnmanagedType.Bool)]
+	public static extern bool ReadProcessMemory (
 		IntPtr hProcess,
 		IntPtr lpBaseAddress,
 		[Out] byte[] lpBuffer,
@@ -17,6 +18,7 @@ public class ProcessMemory {
 	);
 	
 	[DllImport("kernel32.dll",SetLastError = true)]
+	[return: MarshalAs(UnmanagedType.Bool)]
 	public static extern bool WriteProcessMemory(
 		IntPtr hProcess,
 		IntPtr lpBaseAddress,

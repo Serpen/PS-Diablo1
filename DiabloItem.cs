@@ -1,17 +1,17 @@
 using System;
+using System.Runtime.InteropServices;
 
 namespace Serpen.Diablo
 {
-
     public enum eItemQuality : byte { normal, magic, unique }
     public enum eItemClass : byte { Unwearable, Sword, Axe, Bow, Club, Shield, LightAmor, Cap, Mail, HeavyArmor, Staff, Gold, Ring, Amulett, invalid = 0xFF };
     public enum eEquipType : byte { none, OneHanded, TowHanded, Chest, Head, Ring, Amulet, Unequipable, Belt }
-    public enum eSpell { All=-2, None =-1, Firebolt, healing, light, flash, identify, firewall, TownPortal, stonecurse, infrasion, phasing, manashield, fireball, guardian, chainlightning, flamewave, doomserpents, bloodritual, nova, invisiblity, inferno, golem, bloodboil, teleport, apocalypse, etheralize, itemrepair, staffrechare, trapdisarm, elemental, chargedbolt, holybolt, resurrect, telekinesis, healother, bloodstar, bonespirit }
-    public enum eItemCode : byte { None, UseFirst, FullHealing, Healing, Mana = 0x6, FullMana, ElixirStrength = 0xA, ElixirMagic, ElixirDexterity, Elixirvitality, Rejuvenation = 0x12, FullRejuvenation, UseLast, Scroll, ScrollWithTarget, Staff, book, ring, amulet = 0x1a, unique, potionOfHealingSomething, MapOfTheStars = 0x2a, Ear, SpectralExlixir }
+	
+    public enum eItemCode : int { None, UseFirst, FullHealing, Healing, Mana = 0x6, FullMana, ElixirStrength = 0xA, ElixirMagic, ElixirDexterity, Elixirvitality, Rejuvenation = 0x12, FullRejuvenation, UseLast, Scroll, ScrollWithTarget, Staff, book, ring, amulet = 0x1a, unique, potionOfHealingSomething, MapOfTheStars = 0x2a, Ear, SpectralExlixir }
     public enum eItemCategory : byte { none, weapon, Armor, JewerlyOrConsumable, Gold, Chest }
 	
 	[Flags]
-	public enum eSpecialEffect : long {
+	public enum eSpecialEffect : uint {
 		none=0x0,
 		Infrasion=0x1,
 		RandomLifestealing=0x2,
@@ -47,7 +47,7 @@ namespace Serpen.Diablo
 		UserLosesAllResistances=0x80000000
 	}
 
-    public enum eItemBase {
+    public enum eItemBase : byte {
         GOLD                             =   0,
         SHORT_SWORD                      =   1,
         BUCKLER                          =   2,
@@ -207,7 +207,7 @@ namespace Serpen.Diablo
         NULL_14                          = 156
     }
 
-    public enum eUniqueItem {
+    public enum eUniqueItem : int {
         NONE                   = -1,
         THE_BUTCHERS_CLEAVER   =  0,
         THE_UNDEAD_CROWN       =  1,
@@ -555,7 +555,7 @@ namespace Serpen.Diablo
 
         public eItemCode ItemCode {
             get {
-                return (eItemCode) System.BitConverter.ToInt32(buffer, 0xD8 + prefix);
+                return (eItemCode) System.BitConverter.ToInt32(buffer, 0xDC + prefix);
             } set {
                 byte[] temp = System.BitConverter.GetBytes((int)value);
                 Array.Copy(temp,0,buffer,0xD8 + prefix,temp.Length);
@@ -855,6 +855,122 @@ namespace Serpen.Diablo
                 byte[] temp = System.BitConverter.GetBytes((uint)value);
                 Array.Copy(temp,0,buffer,0x168 + prefix,temp.Length);
             }
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+        public struct ItemMemStruct
+        {
+            static public ItemMemStruct FromBuffer(byte[] buffer) {
+                var bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+
+                var memstruct = (ItemMemStruct)Marshal.PtrToStructure(bufferHandle.AddrOfPinnedObject(), typeof(ItemMemStruct));
+                bufferHandle.Free();
+                return memstruct;
+            }
+
+            public static int Size() {
+                return Marshal.SizeOf(typeof(ItemMemStruct));
+            }
+
+            public UInt32 ID;
+            public UInt16 Found;
+            UInt16 unknown5;
+            public eItemClass Class;
+            byte unknown10; //
+            byte unknown11; //
+            byte unknown12; //
+            public UInt32 PosX; //
+            public UInt32 PosY; //
+            UInt32 drop_anim_update; //
+            UInt32 drop_cel_data; //
+            UInt32 drop_frame_count; //
+            UInt32 cur_drop_frame; //
+            UInt32 drop_width; //
+            UInt32 drop_x_offset; //
+            public UInt32 Inactive;
+            byte unknown13; //
+            byte unknown14; //
+            byte unknown15; //
+            byte drop_state; //
+            byte unknown16; //
+            byte unknown17; //
+            byte unknown18; //
+            UInt32 draw_quest_item; //
+            public byte Identified;
+            public eItemQuality Quality;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x40)] public String UnidentifiedName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x40)] public String IdentifiedName;
+            public eEquipType EquipType;
+            public eItemCategory ItemCategory;
+            byte unknown0xBF;
+            public UInt32 Graphics;
+            public UInt32 BasePrice;
+            public UInt32 IdentifiedPrice;
+            public UInt32 DamageBase;
+            public UInt32 DamageMax;
+            public UInt32 Amor;
+            public eSpecialEffect SpecialEffect;
+            public eItemCode ItemCode; //ItemCode?
+            public UInt32 Spell;
+            public Int32 Charges;
+            public Int32 ChargesMax;
+            public Int32 Durability;
+            public Int32 DurabilityMax;
+            public UInt32 DamageBonus;
+            public UInt32 ToHitBonus;
+            public UInt32 AmorBonus;
+            public Int32 StrengthBonus;
+            public Int32 MagicBonus;
+            public Int32 DexterityBonus;
+            public Int32 VitalityBonus;
+            public Int32 ResistFire;
+            public Int32 ResistLightning;
+            public Int32 ResistMagic;
+            public UInt16 ManaBonus;
+            UInt16 unknown0x11e;
+            public UInt32 LifeBonus;
+            public Int32 ExtraDamage;
+            public Int32 DamageModifier;
+            public Int32 LightRadius;
+            public byte Spellbonus;
+            public byte HeldInHand;
+            byte unknown0x132; //
+            byte unknown0x133; //
+            public UInt32 UniqueId;
+            public byte FireDamageBase;
+            public byte FireDamageMax;
+            public byte LightningDamageBase;
+            public byte LightningDamageMax;
+            byte prefix_effect_type; //
+            byte suffix_effect_type; //
+            byte unknown0x14e; //
+            byte v09; //
+            byte v10; //
+            byte v11; //
+            byte v12; //
+            byte v25;
+            int v26;
+            int v01;
+            byte v05;
+            byte v06;
+            byte v07;
+            byte v08;
+            byte prefix_price;
+            byte prefix_price_multiplier;
+            byte suffix_price;
+            byte suffix_price_multiplier;
+            int v13;
+            int v17;
+            int v21;
+            public byte RequireStr;
+            public byte RequireMagic;
+            public byte RequireDex;
+            public byte RequireVit;
+            public byte Equippable;
+            byte v30;
+            byte v31;
+            byte v32;
+            public eItemBase ItemBase;
         }
 
         /*

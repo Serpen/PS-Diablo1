@@ -69,10 +69,21 @@ FormatsToProcess = 'diablo1.ps1xml'
 # NestedModules = @()
 
 # Aus diesem Modul zu exportierende Funktionen. Um optimale Leistung zu erzielen, verwenden Sie keine Platzhalter und löschen den Eintrag nicht. Verwenden Sie ein leeres Array, wenn keine zu exportierenden Funktionen vorhanden sind.
-FunctionsToExport = 'Close-DiabloUI', 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-DiabloSession', 'Enable-DiabloEntrances', 'Export-DiabloItem','Get-DiabloBelt','Get-DiabloCharacterPosition','Get-DiabloCharacterStats','Get-DiabloDifficulty','Get-DiabloEntrances','Get-DiabloHeroEquipment', 'Get-DiabloMonsters', 'Get-DiabloMonsterKills','Get-DiabloPlayers','Get-DiabloQuests', 'Get-DiabloHeroInventory','Get-DiabloSpell','Get-DiabloStoreItems','Get-DiabloTownPortal','Get-DiabloVersion','Invoke-DiabloIdentifyItem','Repair-DiabloItem','Resume-DiabloGame', 'Open-DiabloUI','Set-DiabloDifficulty', 'Suspend-DiabloGame',,'Set-DiabloItemProperty','Set-DiabloPoints','Set-DiabloSpell'
+<#FunctionsToExport = 'Close-D1UI', 'Connect-D1Session','DisConnect-D1Session','Enable-D1Entrances', 'Export-D1Item', 'ConvertTo-D1Item',
+    'Get-D1Belt','Get-D1CharacterPosition','Get-D1CharacterStats','Get-D1Command', 'Get-D1Difficulty','Get-D1Entrances',
+    'Get-D1GameSettings', 'Get-D1HeroEquipment', 'Get-D1Monsters', 'Get-D1MonsterKills','Get-D1Players','Get-D1Quests', 
+    'Get-D1HeroInventory','Get-D1Spell','Get-D1StoreItems','Get-D1TownPortal','Get-D1Version',
+    'Invoke-D1IdentifyItem','New-D1TownPortal', 'Repair-D1Item','Restore-D1ItemCharges', 'Resume-D1Game', 'Open-D1UI',
+    'Set-D1Difficulty','Suspend-D1Game','Set-D1ItemProperty','Set-D1Points','Set-D1Spell'
 
 # Aus diesem Modul zu exportierende Cmdlets. Um optimale Leistung zu erzielen, verwenden Sie keine Platzhalter und löschen den Eintrag nicht. Verwenden Sie ein leeres Array, wenn keine zu exportierenden Cmdlets vorhanden sind.
-CmdletsToExport = 'Close-DiabloUI', 'Connect-DiabloSession','ConvertTo-DiabloItem','DisConnect-DiabloSession', 'Enable-DiabloEntrances', 'Export-DiabloItem','Get-DiabloBelt','Get-DiabloCharacterPosition','Get-DiabloCharacterStats','Get-DiabloDifficulty','Get-DiabloEntrances','Get-DiabloHeroEquipment', 'Get-DiabloMonsters', 'Get-DiabloMonsterKills','Get-DiabloPlayers','Get-DiabloQuests', 'Get-DiabloHeroInventory','Get-DiabloSpell','Get-DiabloStoreItems','Get-DiabloTownPortal','Get-DiabloVersion','Invoke-DiabloIdentifyItem','Repair-DiabloItem','Resume-DiabloGame', 'Open-DiabloUI','Set-DiabloDifficulty', 'Suspend-DiabloGame','Set-DiabloItemProperty','Set-DiabloPoints','Set-DiabloSpell'
+CmdletsToExport = 'Close-D1UI', 'Connect-D1Session','DisConnect-D1Session', 'Enable-D1Entrances', 'Export-D1Item', 'ConvertTo-D1Item',
+    'Get-D1Belt','Get-D1CharacterPosition','Get-D1CharacterStats','Get-D1Command', 'Get-D1Difficulty','Get-D1Entrances',
+    'Get-D1GameSettings', 'Get-D1HeroEquipment', 'Get-D1Monsters', 'Get-D1MonsterKills','Get-D1Players','Get-D1Quests',
+    'Get-D1HeroInventory','Get-D1Spell','Get-D1StoreItems','Get-D1TownPortal','Get-D1Version',
+    'Invoke-D1IdentifyItem','New-D1TownPortal', 'Repair-D1Item','Restore-D1ItemCharges', 'Resume-D1Game', 'Open-D1UI',
+    'Set-D1Difficulty', 'Suspend-D1Game','Set-D1ItemProperty','Set-D1Points','Set-D1Spell'
+#>
 
 # Die aus diesem Modul zu exportierenden Variablen
 VariablesToExport = ''
