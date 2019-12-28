@@ -1,8 +1,8 @@
 
 namespace Serpen.Diablo
 {
-    public enum eSpell { All=-2, None =-1, Firebolt, healing, light, flash, identify, firewall, TownPortal, stonecurse, infrasion, phasing, manashield, fireball, guardian, chainlightning, flamewave, doomserpents, bloodritual, nova, invisiblity, inferno, golem, bloodboil, teleport, apocalypse, etheralize, itemrepair, staffrechare, trapdisarm, elemental, chargedbolt, holybolt, resurrect, telekinesis, healother, bloodstar, bonespirit }
-	public enum eCharClass {Warrior, Rogue, Sorceror}
+    public enum eSpell : sbyte { All = -2, None = 0, Firebolt = 1, Healing, Lightning, Flash, Identify, Firewall, TownPortal, StoneCurse, Infrasion, Phasing, ManaShield, Fireball, Guardian, ChainLightning, FlameWave, DoomSerpents, BloodRitual, Nova, Invisiblity, Inferno, Golem, BloodBoil, Teleport, Apocalypse, Etheralize, ItemRepair, StaffRecharge, TrapDisarm, Elemental, Chargedbolt, Holybolt, Resurrect, Telekinesis, HealOther, BloodStar, BoneSpirit }
+    public enum eCharClass : byte { Warrior, Rogue, Sorceror }
 
     public enum eItemQuality : byte { normal, magic, unique }
     public enum eItemClass : byte { Unwearable, Sword, Axe, Bow, Club, Shield, LightAmor, Cap, Mail, HeavyArmor, Staff, Gold, Ring, Amulett, invalid = 0xFF };
@@ -10,6 +10,11 @@ namespace Serpen.Diablo
 
     public enum eItemCode : int { None, UseFirst, FullHealing, Healing, Mana = 0x6, FullMana, ElixirStrength = 0xA, ElixirMagic, ElixirDexterity, Elixirvitality, Rejuvenation = 0x12, FullRejuvenation, UseLast, Scroll, ScrollWithTarget, Staff, book, ring, amulet = 0x1a, unique, potionOfHealingSomething, MapOfTheStars = 0x2a, Ear, SpectralExlixir }
     public enum eItemCategory : byte { none, weapon, Armor, JewerlyOrConsumable, Gold, Chest }
+
+    public enum eDifficulty : byte { Normal, Nightmare, Hell }
+    public enum Direction : byte { South, South_West, West, North_West, North, North_East, East, South_East }
+
+    public enum PLR_MODE { PM_STAND = 0, PM_WALK = 1, PM_WALK2 = 2, PM_WALK3 = 3, PM_ATTACK = 4, PM_RATTACK = 5, PM_BLOCK = 6, PM_GOTHIT = 7, PM_DEATH = 8, PM_SPELL = 9, PM_NEWLVL = 10, PM_QUIT = 11 }
 
     [System.Flags]
     public enum eSpecialEffect : uint
@@ -41,7 +46,7 @@ namespace Serpen.Diablo
         FastestHitRecovery = 0x800000,
         FastBlock = 0x1000000,
         LightningArrowDamage = 0x2000000,
-        AttackerTakes1To3Damage_webthorns = 0x4000000,
+        AttackerTakes1To3Damage = 0x4000000,
         UserLosesAllMana = 0x8000000,
         AbsorbsHalfOfTrapDamage = 0x10000000,
         _Unknown20000000 = 0x20000000,
@@ -306,4 +311,118 @@ namespace Serpen.Diablo
         NULL = 90
     }
 
+    public enum eMonster {
+	MT_NZOMBIE  = 0x0,
+	MT_BZOMBIE  = 0x1,
+	MT_GZOMBIE  = 0x2,
+	MT_YZOMBIE  = 0x3,
+	MT_RFALLSP  = 0x4,
+	MT_DFALLSP  = 0x5,
+	MT_YFALLSP  = 0x6,
+	MT_BFALLSP  = 0x7,
+	MT_WSKELAX  = 0x8,
+	MT_TSKELAX  = 0x9,
+	MT_RSKELAX  = 0xA,
+	MT_XSKELAX  = 0xB,
+	MT_RFALLSD  = 0xC,
+	MT_DFALLSD  = 0xD,
+	MT_YFALLSD  = 0xE,
+	MT_BFALLSD  = 0xF,
+	MT_NSCAV    = 0x10,
+	MT_BSCAV    = 0x11,
+	MT_WSCAV    = 0x12,
+	MT_YSCAV    = 0x13,
+	MT_WSKELBW  = 0x14,
+	MT_TSKELBW  = 0x15,
+	MT_RSKELBW  = 0x16,
+	MT_XSKELBW  = 0x17,
+	MT_WSKELSD  = 0x18,
+	MT_TSKELSD  = 0x19,
+	MT_RSKELSD  = 0x1A,
+	MT_XSKELSD  = 0x1B,
+	MT_INVILORD = 0x1C,
+	MT_SNEAK    = 0x1D,
+	MT_STALKER  = 0x1E,
+	MT_UNSEEN   = 0x1F,
+	MT_ILLWEAV  = 0x20,
+	MT_LRDSAYTR = 0x21,
+	MT_NGOATMC  = 0x22,
+	MT_BGOATMC  = 0x23,
+	MT_RGOATMC  = 0x24,
+	MT_GGOATMC  = 0x25,
+	MT_FIEND    = 0x26,
+	MT_BLINK    = 0x27,
+	MT_GLOOM    = 0x28,
+	MT_FAMILIAR = 0x29,
+	MT_NGOATBW  = 0x2A,
+	MT_BGOATBW  = 0x2B,
+	MT_RGOATBW  = 0x2C,
+	MT_GGOATBW  = 0x2D,
+	MT_NACID    = 0x2E,
+	MT_RACID    = 0x2F,
+	MT_BACID    = 0x30,
+	MT_XACID    = 0x31,
+	MT_SKING    = 0x32,
+	MT_CLEAVER  = 0x33,
+	MT_FAT      = 0x34,
+	MT_MUDMAN   = 0x35,
+	MT_TOAD     = 0x36,
+	MT_FLAYED   = 0x37,
+	MT_WYRM     = 0x38,
+	MT_CAVSLUG  = 0x39,
+	MT_DVLWYRM  = 0x3A,
+	MT_DEVOUR   = 0x3B,
+	MT_NMAGMA   = 0x3C,
+	MT_YMAGMA   = 0x3D,
+	MT_BMAGMA   = 0x3E,
+	MT_WMAGMA   = 0x3F,
+	MT_HORNED   = 0x40,
+	MT_MUDRUN   = 0x41,
+	MT_FROSTC   = 0x42,
+	MT_OBLORD   = 0x43,
+	MT_BONEDMN  = 0x44,
+	MT_REDDTH   = 0x45,
+	MT_LTCHDMN  = 0x46,
+	MT_UDEDBLRG = 0x47,
+	MT_INCIN    = 0x48,
+	MT_FLAMLRD  = 0x49,
+	MT_DOOMFIRE = 0x4A,
+	MT_HELLBURN = 0x4B,
+	MT_STORM    = 0x4C,
+	MT_RSTORM   = 0x4D,
+	MT_STORML   = 0x4E,
+	MT_MAEL     = 0x4F,
+	MT_BIGFALL  = 0x50,
+	MT_WINGED   = 0x51,
+	MT_GARGOYLE = 0x52,
+	MT_BLOODCLW = 0x53,
+	MT_DEATHW   = 0x54,
+	MT_MEGA     = 0x55,
+	MT_GUARD    = 0x56,
+	MT_VTEXLRD  = 0x57,
+	MT_BALROG   = 0x58,
+	MT_NSNAKE   = 0x59,
+	MT_RSNAKE   = 0x5A,
+	MT_BSNAKE   = 0x5B,
+	MT_GSNAKE   = 0x5C,
+	MT_NBLACK   = 0x5D,
+	MT_RTBLACK  = 0x5E,
+	MT_BTBLACK  = 0x5F,
+	MT_RBLACK   = 0x60,
+	MT_UNRAV    = 0x61,
+	MT_HOLOWONE = 0x62,
+	MT_PAINMSTR = 0x63,
+	MT_REALWEAV = 0x64,
+	MT_SUCCUBUS = 0x65,
+	MT_SNOWWICH = 0x66,
+	MT_HLSPWN   = 0x67,
+	MT_SOLBRNR  = 0x68,
+	MT_COUNSLR  = 0x69,
+	MT_MAGISTR  = 0x6A,
+	MT_CABALIST = 0x6B,
+	MT_ADVOCATE = 0x6C,
+	MT_GOLEM    = 0x6D,
+	MT_DIABLO   = 0x6E,
+	NUM_MTYPES,
+}
 }

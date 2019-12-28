@@ -27,7 +27,7 @@ Author = 'Serpen'
 CompanyName = ''
 
 # Urheberrechtserklärung für dieses Modul
-Copyright = '(c) 2017 Serpen. Alle Rechte vorbehalten.'
+Copyright = '(c) 2020 Serpen. Alle Rechte vorbehalten.'
 
 # Beschreibung der von diesem Modul bereitgestellten Funktionen
 Description = 'Powershell Module for Diablo 1'
@@ -57,7 +57,7 @@ PowerShellVersion = '2.0'
 # RequiredAssemblies = @()
 
 # Die Skriptdateien (PS1-Dateien), die vor dem Importieren dieses Moduls in der Umgebung des Aufrufers ausgeführt werden.
-#ScriptsToProcess = 'definitions.ps1'
+ScriptsToProcess = 'definitions.ps1'
 
 # Die Typdateien (.ps1xml), die beim Importieren dieses Moduls geladen werden sollen
 # TypesToProcess = @()
@@ -125,7 +125,7 @@ PrivateData = @{
 } # Ende der PrivateData-Hashtabelle
 
 # HelpInfo-URI dieses Moduls
-# HelpInfoURI = ''
+HelpInfoURI = 'https://github.com/Serpen/PS-Diablo1/wiki'
 
 # Standardpräfix für Befehle, die aus diesem Modul exportiert werden. Das Standardpräfix kann mit "Import-Module -Prefix" überschrieben werden.
 #DefaultCommandPrefix = 'Diablo'

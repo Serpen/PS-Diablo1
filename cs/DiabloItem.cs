@@ -106,7 +106,7 @@ namespace Serpen.Diablo
             }
         }
 
-        public uint ID // Seed
+        public uint ID
         {
             get
             {
@@ -157,10 +157,6 @@ namespace Serpen.Diablo
             {
                 return (eItemClass)buffer[0x8 + prefix];
             }
-            set
-            {
-                buffer[0x8 + prefix] = (byte)value;
-            }
         }
 
         public bool Identified
@@ -181,10 +177,6 @@ namespace Serpen.Diablo
             {
                 return (eItemQuality)buffer[0x3c + prefix];
             }
-            set
-            {
-                buffer[0x3c + prefix] = (byte)value;
-            }
         }
 
         public eEquipType EquipType
@@ -192,10 +184,6 @@ namespace Serpen.Diablo
             get
             {
                 return (eEquipType)buffer[0xBD + prefix];
-            }
-            set
-            {
-                buffer[0xBD + prefix] = (byte)value;
             }
         }
 
@@ -205,50 +193,30 @@ namespace Serpen.Diablo
             {
                 return (eItemCategory)buffer[0xBE + prefix];
             }
-            set
-            {
-                buffer[0xBE + prefix] = (byte)value;
-            }
         }
 
-        uint Graphics
-        {
-            get
-            {
-                return System.BitConverter.ToUInt32(buffer, 0xC0 + prefix);
-            }
-            set
-            {
-                byte[] temp = System.BitConverter.GetBytes(value);
-                Array.Copy(temp, 0, buffer, 0xC0 + prefix, temp.Length);
-            }
-        }
-
-
-        //wrong?
         public uint BasePrice
         {
             get
             {
-                return System.BitConverter.ToUInt32(buffer, 0xC4 + prefix)/4;
+                return (uint)(System.BitConverter.ToUInt32(buffer, 0xC4 + prefix) / (ItemClass == eItemClass.Gold ? 1 : 4));
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value*4);
+                byte[] temp = System.BitConverter.GetBytes(value * (ItemClass == eItemClass.Gold ? 1 : 4));
                 Array.Copy(temp, 0, buffer, 0xC4 + prefix, temp.Length);
             }
         }
 
-//wrong?
         public uint IdentifiedPrice
         {
             get
             {
-                return System.BitConverter.ToUInt32(buffer, 0xC8 + prefix)/4;
+                return (uint)(System.BitConverter.ToUInt32(buffer, 0xC8 + prefix) / (ItemClass == eItemClass.Gold ? 1 : 4));
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value*4);
+                byte[] temp = System.BitConverter.GetBytes(value * (ItemClass == eItemClass.Gold ? 1 : 4));
                 Array.Copy(temp, 0, buffer, 0xC8 + prefix, temp.Length);
             }
         }
@@ -322,7 +290,7 @@ namespace Serpen.Diablo
         {
             get
             {
-                return (eSpell)System.BitConverter.ToUInt32(buffer, 0xE0 + prefix) - 1;
+                return (eSpell)System.BitConverter.ToUInt32(buffer, 0xE0 + prefix);
             }
             set
             {
@@ -422,6 +390,14 @@ namespace Serpen.Diablo
             }
         }
 
+        public void SetAllAttributes(int val)
+        {
+            StrengthBonus =
+            MagicBonus =
+            DexterityBonus =
+            VitalityBonus = val;
+        }
+
         public int StrengthBonus
         {
             get
@@ -472,6 +448,10 @@ namespace Serpen.Diablo
                 byte[] temp = System.BitConverter.GetBytes(value);
                 Array.Copy(temp, 0, buffer, 0x10C + prefix, temp.Length);
             }
+        }
+
+        public void SetResistAll (byte val) {
+            ResistFire = ResistLightning = ResistMagic = val;
         }
 
         public int ResistFire

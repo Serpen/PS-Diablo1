@@ -11,21 +11,8 @@ namespace Serpen.Diablo
         public byte Level { get; set; }
     }
 
-    public enum Direction
-    {
-        South, South_West, West, North_West, North, North_East, East, South_East
-
-    }
-
-    public enum PLR_MODE
-    {
-        PM_STAND = 0, PM_WALK = 1, PM_WALK2 = 2, PM_WALK3 = 3, PM_ATTACK = 4, PM_RATTACK = 5, PM_BLOCK = 6, PM_GOTHIT = 7, PM_DEATH = 8, PM_SPELL = 9, PM_NEWLVL = 10, PM_QUIT = 11
-    }
-
-
     public class Character
     {
-
         public byte[] Buffer;
         public Character(byte[] buffer)
         {
@@ -36,7 +23,12 @@ namespace Serpen.Diablo
         {
             get
             {
-                return System.Text.Encoding.ASCII.GetString(Buffer, 321, 32);
+                string name = System.Text.Encoding.ASCII.GetString(Buffer, 321, 32);
+                int pos = name.IndexOf((char)0);
+                if (pos > 0)
+                    return name.Substring(0,pos);
+                else
+                    return name;
             }
         }
 
