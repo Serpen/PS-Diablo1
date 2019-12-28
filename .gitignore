@@ -1,0 +1,6 @@
+cs/.vs
+cs/*.csproj
+cs/bin
+cs/obj
+data/*.ct
+tests
