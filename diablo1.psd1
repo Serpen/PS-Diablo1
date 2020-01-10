@@ -125,7 +125,7 @@ PrivateData = @{
 } # Ende der PrivateData-Hashtabelle
 
 # HelpInfo-URI dieses Moduls
-HelpInfoURI = 'https://github.com/Serpen/PS-Diablo1/wiki'
+#HelpInfoURI = 'https://github.com/Serpen/PS-Diablo1/wiki'
 
 # Standardpräfix für Befehle, die aus diesem Modul exportiert werden. Das Standardpräfix kann mit "Import-Module -Prefix" überschrieben werden.
 #DefaultCommandPrefix = 'Diablo'

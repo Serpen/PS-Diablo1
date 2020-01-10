@@ -2,15 +2,6 @@
 
 namespace Serpen.Diablo
 {
-    public class Spell
-    {
-        public eSpell spell { get; set; }
-        public byte Index { get; set; }
-        public string Spellbook { get; set; }
-        public bool Enabled { get; set; }
-        public byte Level { get; set; }
-    }
-
     public class Character
     {
         public byte[] Buffer;
@@ -72,5 +63,4 @@ namespace Serpen.Diablo
         public Direction Dir { get { return (Direction)Buffer[0x71]; } }
         public PLR_MODE Mode { get { return (PLR_MODE)Buffer[0]; } }
     }
-
 }

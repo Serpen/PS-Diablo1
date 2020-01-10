@@ -47,7 +47,7 @@ function Get-D1Version {
 
 #checked
 function Connect-D1Session {
-    $proc = Get-Process -Name diabl*, hellfir*, devilutio*
+    $proc = Get-Process -Name diabl*, hellfir*, devilutio*, diabdem*
 
     if (!$proc) {
         throw 'Diablo is not running'
@@ -114,7 +114,7 @@ function Get-D1Players {
     Write-Verbose "Found $playersCount Players"
     
     for ([int]$i = 0; $i -lt $playersCount; $i++) {
-        $buffer = ReadMemoryDirect -D1Session $D1Session -OffsetType playname -Length $PLAYERNAME_LENGTH -n $i
+        $buffer = ReadMemoryDirect -D1Session $D1Session -OffsetAddress ($D1Session.Offsets.Character+280) -Length $PLAYERNAME_LENGTH -n $i
         
         New-Object PSobject -Property @{'Index' = ($i + 1); 'Name' = (ConvertFrom-D1String $Buffer 0 $PLAYERNAME_LENGTH) }
     }
@@ -160,6 +160,7 @@ function Set-D1Difficulty {
 #checked
 function Get-D1Character {
     [CmdLetBinding()]
+    [outputType([serpen.diablo.Character])]
     param (
         [ValidateRange(1, 4)][byte]$PlayerIndex = 1,
         $D1Session = $Global:D1Session
@@ -172,33 +173,6 @@ function Get-D1Character {
         $obj | Add-Member -NotePropertyName "_MemoryAddress" -NotePropertyValue ($D1Session.offsets.Character + ($PlayerIndex - 1) * 469)
     }
     $obj
-}
-
-#checked
-function Get-D1StoreItems {
-    param (
-        [Parameter(Mandatory = $true)][ValidateSet('Wirt', 'Griswold Premium', 'Griswold Basic', 'Pepin', 'Adria')][String]$Store,
-        $D1Session = $Global:D1Session
-    )
-    Test-D1ValidSession -D1Session $D1Session
-
-    switch ($Store) {
-        'Wirt' { $curSO = $D1Session.Offsets.store; $count = 1 }
-        'Griswold Premium' { $curSO = $D1Session.Offsets.store + 0x178; $count = 6 }
-        'Griswold Basic' { $curSO = $D1Session.Offsets.store + 0x9920 + 8; $count = 20 }
-        'Pepin' { $curSO = $D1Session.Offsets.store + 0x7AA0 + 8; $count = 20 }
-        'Adria' { $curSO = $D1Session.Offsets.store + 0x5DD8 + 8; $count = 20 }
-    }
-
-    for ([int]$i = 0; $i -lt $count; $i++) {
-        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($curSO + ($i * $D1Session.Offsets.ITEM_STRUCT_SIZE))
-        if ($itm.Itemclass -ne 'invalid') {
-            $itm
-        }
-        else {
-            break
-        }
-    }
 }
 
 #checked
@@ -222,7 +196,7 @@ function Get-D1TownPortal {
     $buffer = ReadMemoryDirect -D1Session $D1Session -OffsetAddress $offset -Length 24
 
     $Properties.Add('Open', [boolean][System.BitConverter]::ToInt32($buffer, 0))
-    $Properties.Add('Dungeontype', $DUNGEONTYPES_ENUM[[System.BitConverter]::ToInt32($buffer, 16)])
+    $Properties.Add('Dungeontype', [Serpen.Diablo.eDungenType][System.BitConverter]::ToInt32($buffer, 16))
     $Properties.Add('Dungeon', [System.BitConverter]::ToInt32($buffer, 12))
     $Properties.Add('X', [System.BitConverter]::ToInt32($buffer, 4))
     $Properties.Add('Y', [System.BitConverter]::ToInt32($buffer, 8))
@@ -232,12 +206,13 @@ function Get-D1TownPortal {
     }
 
     $returnobject = New-Object PSObject -Property $Properties
-    $returnobject.psobject.TypeNames.Insert(0, 'Serpen.Diablo.Position')
+    $returnobject.psobject.TypeNames.Insert(0, 'Serpen.Diablo.TownPortal')
     $returnobject
 }
 
 #checked
 function Get-D1Entrances {
+    #[outputType("Serpen.Diablo.Entrances")]
     param (
         $D1Session = $Global:D1Session
     )
@@ -277,93 +252,6 @@ function Enable-D1Entrances {
 
 }
 
-function Set-D1Item {
-    param (
-        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
-        [Serpen.Diablo.Item]$Item,
-        $D1Session = $Global:D1Session
-    )
-
-    Test-D1ValidSession -D1Session $D1Session
-
-    
-    if (!$item.MemoryOffset) {
-        throw "Item $Item not in memory"
-    }
-
-    [int]$write = 0
-
-    $ret = [Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($D1Session.ProcessMemoryHandle, $item.MemoryOffset, $item.Buffer, $item.Buffer.Length, [ref]$write)
-    if (!$ret -or $write -ne $item.Buffer.length) {
-        throw "Error saving item"
-    }
-}
-
-#checked
-function Invoke-D1IdentifyItem {
-    param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Item', Position = 0, ValueFromPipeline = $true)]
-        [Serpen.Diablo.Item]$Item,
-        $D1Session = $Global:D1Session
-    )
-    begin {
-        Test-D1ValidSession -D1Session $D1Session
-    }
-    process {
-        foreach ($itm in $item) {
-            if (!$item.MemoryOffset) {
-                throw "Item $Item not in memory"
-            }
-
-            $itm.Identified = $true
-    
-            $itm | Set-D1Item -D1Session $D1Session
-        }
-    
-    }
-}
-
-#checked
-function Repair-D1Item {
-    param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Item', Position = 0, ValueFromPipeline = $true)]
-        [Serpen.Diablo.Item]$Item,
-        $D1Session = $Global:D1Session
-    )
-    begin {
-        Test-D1ValidSession -D1Session $D1Session
-    }
-    process {
-        [int]$write = 0
-
-        if (![Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($D1Session.ProcessMemoryHandle, ($_.MemoryOffset + 0xec), $_.DurabilityMax, 1, [ref]$write)) {
-            Write-Error "Could not repair item '$($item.identifiedname)'"
-        }
-    }
-}
-
-function Restore-D1ItemCharges {
-    param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Item', Position = 0, ValueFromPipeline = $true)]
-        [Serpen.Diablo.Item]$Item,
-        $D1Session = $Global:D1Session
-    )
-    begin {
-        Test-D1ValidSession -D1Session $D1Session
-    }
-    process {
-        foreach ($itm in $item) {
-            if (!$item.MemoryOffset) {
-                throw "Item $Item not in memory"
-            }
-        
-            $itm.Charges = $itm.ChargesMax
-    
-            $itm | Set-D1Item -D1Session $D1Session
-        }
-    }
-}
-
 #checked64
 function Set-D1LevelUpPoints {
     param (
@@ -372,13 +260,14 @@ function Set-D1LevelUpPoints {
     )
     Test-D1ValidSession -D1Session $D1Session
 
-    WriteMemoryDirect -D1Session $D1Session -OffsetType LvlUpPoints -Data $Points
+    WriteMemoryDirect -D1Session $D1Session -OffsetType Base -Data $Points -Index 348
 
 }
 
 #checked64
 function Get-D1Spell {
     [CmdLetBinding()]
+    [outputType([Serpen.Diablo.Spell])]
     param (
         [Serpen.Diablo.eSpell[]]$Spell,
         $D1Session = $Global:D1Session
@@ -400,7 +289,8 @@ function Get-D1Spell {
         $returnobject.Spell = $spellSingle
         $returnobject.Index = $intspell
         $returnobject.Spellbook = "Page $($SPELLBOX_X[$intspell]).$($SPELLBOX_Y[$intspell])"
-        $returnobject.Enabled = ($spellflagsInt -band (1 -shl $intspell)) -gt 0
+        #$returnobject.Enabled = ($spellflagsInt -band (1 -shl $intspell)) -gt 0
+        $returnobject.Enabled = $spellflags -bor [math]::Pow(2, $Spell)
         $returnobject.Level = $spellLevel
 
         $returnobject
@@ -446,6 +336,7 @@ function Set-D1Spell {
 
 #checked
 function Get-D1Quests {
+    #[outputType('Serpen.Diablo.Quest')]
     param (
         $D1Session = $Global:D1Session
     )
@@ -490,89 +381,6 @@ function Get-D1MonsterKills {
         $returnobject.psobject.TypeNames.Insert(0, 'Serpen.Diablo.MonsterKill')
         $returnobject
     } #foreach
-}
-
-#checked
-function Get-D1HeroEquipment {
-    param (
-        [ValidateSet('All', 'Helm', 'Amulett', 'LeftHand', 'RightHand', 'Plate', 'LeftRing', 'RightRing')][String[]]$Position = 'All',
-        $D1Session = $Global:D1Session
-    )
-    Test-D1ValidSession -D1Session $D1Session
-
-    $offsets = @()
-
-    if ($Position -contains 'All') {
-        $offsets = 0..6
-    }
-    else {
-        if ($Position -contains 'Helm') {
-            $offsets += 0
-        }
-        if ($Position -contains 'LeftRing') {
-            $offsets += 1
-        }
-        if ($Position -contains 'RightRing') {
-            $offsets += 2
-        }
-        if ($Position -contains 'Amulett') {
-            $offsets += 3
-        }
-        if ($Position -contains 'LeftHand') {
-            $offsets += 4
-        }
-        if ($Position -contains 'RightHand') {
-            $offsets += 5
-        }
-        if ($Position -contains 'Plate') {
-            $offsets += 6
-        }
-    }
-
-    $so = $D1Session.Offsets.equip - $D1Session.Offsets.ITEM_STRUCT_SIZE * 4
-
-    foreach ($i in $offsets) {
-        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($so + $i * $D1Session.Offsets.ITEM_STRUCT_SIZE)
-        if ($itm.Itemclass -notin ('invalid')) {
-            $itm
-        }
-    }
-}
-
-function Get-D1Belt {
-    param (
-        $D1Session = $Global:D1Session
-    )
-    Test-D1ValidSession -D1Session $D1Session
-
-    $Offset = $D1Session.Offsets.belt
-    if (!$offset) {
-        throw [System.NotSupportedException]"Belt not supported in this version"
-    }
-
-    for ([int]$i = 0; $i -lt 8; $i++) {
-        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($offset + $i * $D1Session.Offsets.ITEM_STRUCT_SIZE)
-        if ($itm.Itemclass -ne 'invalid') {
-            $itm
-        }
-    }
-}
-
-function Get-D1HeroInventory {
-    param (
-        $D1Session = $Global:D1Session
-    )
-    Test-D1ValidSession -D1Session $D1Session
-
-    for ([int]$i = 0; $i -lt 4 * 10; $i++) {
-        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($D1Session.Offsets.backpack + $i * $D1Session.Offsets.ITEM_STRUCT_SIZE)
-        if ($itm.Itemclass -ne 'invalid') {
-            $itm
-        }
-        else {
-            break
-        }
-    }
 }
 
 function Get-D1Monsters {
@@ -649,8 +457,6 @@ function show-D1CompleteMap {
         $buffer[$i] = 1
     }
 
-    $of = $D1Session.offsets.Automap
-
     WriteMemoryDirect -D1Session $D1Session -Data $buffer -OffsetType Automap
 }
 
@@ -664,20 +470,28 @@ function GenerateHashTableProperties {
     }
 }
 
+
+
+#region Items
+
+
 #missing properties
 #   left click action, right click action, inventory space, beltable, level config
 
 function ConvertTo-D1Item {
+    [CmdLetBinding()]
+    [outputType([serpen.diablo.item])]
+
     param (
         [Parameter(ParameterSetName = 'File')][String]$File,
         [Parameter(ParameterSetName = 'Byte')][byte[]]$buffer,
-        [Parameter(ParameterSetName = 'Session')][object]$D1Session,
+        [Parameter(ParameterSetName = 'Session')][object]$D1Session = $Global:D1Session,
         [Parameter(ParameterSetName = 'Session')][int64]$Offset
     )
     
     if ($PSCmdlet.ParameterSetName -eq 'File') {
         $object = New-Object Serpen.Diablo.Item $File
-
+        $object | Add-Member -MemberType NoteProperty -Name _File -Value $File
         Write-Verbose "Processing $File"
     }
     elseif ($PSCmdlet.ParameterSetName -eq 'Byte') {
@@ -686,7 +500,8 @@ function ConvertTo-D1Item {
     else {
         $buffer = [array]::CreateInstance([byte], 0x170)
         [int]$read = 0
-        [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($D1Session.ProcessMemoryHandle, $Offset, $buffer, $buffer.length, [ref]$read) | Out-Null
+        $buffer = ReadMemoryDirect -OffsetAddress $Offset -D1Session $D1Session -Length 0x170
+        #[Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($D1Session.ProcessMemoryHandle, $Offset, $buffer, $buffer.length, [ref]$read)
         $object = New-Object Serpen.Diablo.Item -ArgumentList @(, $buffer)
         $object | Add-Member -MemberType NoteProperty -Name MemoryOffset -Value $Offset
     }
@@ -694,26 +509,278 @@ function ConvertTo-D1Item {
     $object
 }
 
+function Set-D1Item {
+    param (
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+        [Serpen.Diablo.Item]$Item,
+        $D1Session = $Global:D1Session
+    )
+
+    Test-D1ValidSession -D1Session $D1Session
+
+    
+    if (!($item | get-member MemoryOffset)) {
+        throw "Item $Item not in memory"
+    }
+
+    [int]$write = 0
+
+    $ret = [Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($D1Session.ProcessMemoryHandle, $item.MemoryOffset, $item.Buffer, $item.Buffer.Length, [ref]$write)
+    if (!$ret -or $write -ne $item.Buffer.length) {
+        throw "Error saving item"
+    }
+}
+
+function Invoke-D1IdentifyItem {
+    param (
+        [Parameter(Mandatory = $true, ParameterSetName = 'Item', Position = 0, ValueFromPipeline = $true)]
+        [Serpen.Diablo.Item]$Item,
+        $D1Session = $Global:D1Session
+    )
+    begin {
+        Test-D1ValidSession -D1Session $D1Session
+    }
+    process {
+        foreach ($itm in $item) {
+            if (!($item | Get-Member MemoryOffset)) {
+                throw "Item $Item not in memory"
+            }
+
+            $itm.Identified = $true
+    
+            $itm | Set-D1Item -D1Session $D1Session
+        }
+    
+    }
+}
+
+function Repair-D1Item {
+    param (
+        [Parameter(Mandatory = $true, ParameterSetName = 'Item', Position = 0, ValueFromPipeline = $true)]
+        [Serpen.Diablo.Item]$Item,
+        $D1Session = $Global:D1Session
+    )
+    begin {
+        Test-D1ValidSession -D1Session $D1Session
+    }
+    process {
+        foreach ($itm in $item) {
+            if (!($item | Get-Member MemoryOffset)) {
+                throw "Item $Item not in memory"
+            }
+
+            $itm.Durability = $itm.Durability.To
+    
+            $itm | Set-D1Item -D1Session $D1Session
+        }
+    
+    }
+}
+
+function Restore-D1ItemCharges {
+    param (
+        [Parameter(Mandatory = $true, ParameterSetName = 'Item', Position = 0, ValueFromPipeline = $true)]
+        [Serpen.Diablo.Item]$Item,
+        $D1Session = $Global:D1Session
+    )
+    begin {
+        Test-D1ValidSession -D1Session $D1Session
+    }
+    process {
+        foreach ($itm in $item) {
+            if (!($item | Get-Member MemoryOffset)) {
+                throw "Item $Item not in memory"
+            }
+        
+            $itm.Charges = $itm.Charges.To
+    
+            $itm | Set-D1Item -D1Session $D1Session
+        }
+    }
+}
+
+
 function Export-D1Item {
     param (
-        [Object]$Item,
+        [Serpen.Diablo.Item]$Item,
         [String]$File,
         $D1Session = $Global:D1Session
     )
     Test-D1ValidSession -D1Session $D1Session
 
-    [int]$read = 0
-    $buffer = [array]::CreateInstance([byte], $D1Session.Offsets.ITEM_STRUCT_SIZE)
-
-    if (![Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($D1Session.ProcessMemoryHandle, $item.MemoryOffset, $buffer, $buffer.length, [ref]$read)) {
-        throw "Could not read item '$($item.identifiedname)'"
-    }
-
     $filestram = [system.io.file]::Create($file)
-    $filestram.Write($buffer, 0, $buffer.length)
+    $filestram.Write($item.Buffer, 0, $item.Buffer.Length)
     $filestram.Close()
 
 }
+
+function Import-D1Item {
+    param (
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][Serpen.Diablo.Item]$ReplaceItem,
+        [String]$File,
+        $D1Session = $Global:D1Session
+    )
+    Test-D1ValidSession -D1Session $D1Session
+
+
+    if (!($ReplaceItem | Get-Member MemoryOffset)) {
+        throw "$ReplaceItem not im Memory"
+    }
+    $newItem = ConvertTo-D1Item -File $file
+
+    if (!$newItem) {
+        throw "could not read item from file"
+    }
+
+    $newItem | Add-Member -NotePropertyName MemoryOffset $ReplaceItem.MemoryOffset
+
+    $newItem | Set-D1Item
+}
+
+
+
+function Get-D1HeroEquipment {
+    [CmdLetBinding()]
+    [outputType([serpen.diablo.item])]
+    param (
+        [ValidateSet('All', 'Helm', 'Amulett', 'LeftHand', 'RightHand', 'Plate', 'LeftRing', 'RightRing')][String[]]$Position = 'All',
+        $D1Session = $Global:D1Session
+    )
+    Test-D1ValidSession -D1Session $D1Session
+
+    if (!$D1Session.Offsets.inv) {
+        throw [System.NotSupportedException]"Belt not supported in this version"
+    }
+
+    $offsets = @()
+
+    if ($Position -contains 'All') {
+        $offsets = 0..6
+    }
+    else {
+        if ($Position -contains 'Helm') {
+            $offsets += 0
+        }
+        if ($Position -contains 'LeftRing') {
+            $offsets += 1
+        }
+        if ($Position -contains 'RightRing') {
+            $offsets += 2
+        }
+        if ($Position -contains 'Amulett') {
+            $offsets += 3
+        }
+        if ($Position -contains 'LeftHand') {
+            $offsets += 4
+        }
+        if ($Position -contains 'RightHand') {
+            $offsets += 5
+        }
+        if ($Position -contains 'Plate') {
+            $offsets += 6
+        }
+    }
+
+    $so = $D1Session.Offsets.inv
+
+    foreach ($i in $offsets) {
+        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($so + $i * $D1Session.Offsets.ITEM_STRUCT_SIZE)
+        if ($itm.Itemclass -ne 'invalid') {
+            $itm | Add-Member -NotePropertyName "_InventoryLocation" -NotePropertyValue "Equip $i"
+            $itm
+        }
+    }
+}
+
+
+function Get-D1HeroInventory {
+    [CmdLetBinding()]
+    [outputType([serpen.diablo.item])]
+
+    param (
+        $D1Session = $Global:D1Session
+    )
+    Test-D1ValidSession -D1Session $D1Session
+
+    if (!$D1Session.Offsets.inv) {
+        throw [System.NotSupportedException]"Belt not supported in this version"
+    }
+
+    $so = $D1Session.Offsets.inv + 7*$D1Session.Offsets.ITEM_STRUCT_SIZE
+
+    $buff = ReadMemoryDirect -D1Session $D1Session -OffsetAddress ($D1Session.Offsets.inv + 47*$D1Session.Offsets.ITEM_STRUCT_SIZE) -Length 1 
+
+    for ([int]$i = 0; $i -lt 4 * 10; $i++) {
+        if ($i -ge $buff[0]) {
+            break
+        }
+        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($so + $i * $D1Session.Offsets.ITEM_STRUCT_SIZE)
+        if ($itm.Itemclass -ne 'invalid') {
+            $itm | Add-Member -NotePropertyName "_InventoryLocation" -NotePropertyValue "Inv $i"
+            $itm
+        } else {
+            break
+        }
+    }
+}
+
+function Get-D1Belt {
+    [CmdLetBinding()]
+    [outputType([serpen.diablo.item])]
+
+    param (
+        $D1Session = $Global:D1Session
+    )
+    Test-D1ValidSession -D1Session $D1Session
+
+    $Offset = $D1Session.Offsets.inv + 47*$D1Session.Offsets.ITEM_STRUCT_SIZE + 44
+    if (!$D1Session.Offsets.inv) {
+        throw [System.NotSupportedException]"Belt not supported in this version"
+    }
+
+    for ([int]$i = 0; $i -lt 8; $i++) {
+        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($offset + $i * $D1Session.Offsets.ITEM_STRUCT_SIZE)
+        $itm | Add-Member -NotePropertyName "_InventoryLocation" -NotePropertyValue "Belt $i"
+        if ($itm.Itemclass -ne 'invalid') {
+            $itm
+        }
+    }
+}
+
+function Get-D1StoreItems {
+    [CmdLetBinding()]
+    [outputType([serpen.diablo.item])]
+
+    param (
+        [Parameter(Mandatory = $true)][ValidateSet('Wirt', 'Griswold Premium', 'Griswold Basic', 'Pepin', 'Adria')][String]$Store,
+        $D1Session = $Global:D1Session
+    )
+    Test-D1ValidSession -D1Session $D1Session
+
+    switch ($Store) {
+        'Wirt' { $curSO = $D1Session.Offsets.store; $count = 1 }
+        'Griswold Premium' { $curSO = $D1Session.Offsets.store + 0x178; $count = 6 }
+        'Griswold Basic' { $curSO = $D1Session.Offsets.store + 0x9920 + 8; $count = 20 }
+        'Pepin' { $curSO = $D1Session.Offsets.store + 0x7AA0 + 8; $count = 20 }
+        'Adria' { $curSO = $D1Session.Offsets.store + 0x5DD8 + 8; $count = 20 }
+    }
+
+    for ([int]$i = 0; $i -lt $count; $i++) {
+        $itm = ConvertTo-D1Item -D1Session $D1Session -Offset ($curSO + ($i * $D1Session.Offsets.ITEM_STRUCT_SIZE))
+        $itm | Add-Member -NotePropertyName "_Store" -NotePropertyValue "$store $i"
+
+        if ($itm.Itemclass -ne 'invalid') {
+            $itm
+        }
+        else {
+            break
+        }
+    }
+}
+
+
+#endregion
+
 
 function Suspend-D1Game {
 	
@@ -771,34 +838,6 @@ function Test-D1ValidSession {
     }
 }
 
-function ReadMemory {
-    param (
-        $D1Session = $Global:D1Session,
-        [String]$OffsetType,
-        [uint16][Alias('n')]$Index = 0,
-        [uint16]$Length
-    )
-
-    Test-D1ValidSession -D1Session $D1Session
-
-    $buffer = [array]::CreateInstance([byte], $Length)
-    [int]$read = 0
-
-    [int]$offset = (GetVersionsSpecificOffset -D1Session $D1Session $OffsetType $Index)
-
-    if ($offset -le 0) {
-        throw "$OffsetType not supported in $($D1Session.Version)"
-    }
-
-    $ret = [Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($D1Session.ProcessMemoryHandle, $offset, $buffer, $buffer.Length, [ref]$read)
-    
-    if ($read -eq $Length) {
-        return $buffer
-    }
-    else {
-        throw "Could not read $ret $read != $Length"
-    }
-}
 function ReadMemoryDirect {
     param (
         [Parameter(ParameterSetName = 'OffsetName', Mandatory = $true)]
@@ -850,6 +889,8 @@ function WriteMemoryDirect {
     Test-D1ValidSession -D1Session $D1Session
     
     [int64]$offset = $D1Session.Offsets.$OffsetType + $Index
+
+    Write-Warning $offset
     
     if ($offset -le 0) {
         throw "$OffsetType not supported in $($D1Session.Version)"
@@ -860,7 +901,7 @@ function WriteMemoryDirect {
     $ret = [Serpen.Wrapper.ProcessMemory]::WriteProcessMemory($D1Session.ProcessMemoryHandle, $offset, $Data, $Data.Length, [ref]$write)
         
     if (!$ret -or ($write -ne $data.Length)) {
-        throw "Could not write $ret $write != $($data.Length)))"
+        throw "[$offset] Could not write $ret $write != $($data.Length)))"
     } 
 }
 

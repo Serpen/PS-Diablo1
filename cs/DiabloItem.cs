@@ -64,10 +64,13 @@ namespace Serpen.Diablo
 
         public override string ToString()
         {
-            if (ItemClass == eItemClass.Gold)
+            if (ItemClass == eItemType.Gold)
                 return string.Format("{0} Gold", BasePrice);
             else
-                return string.Format("{0} ({1})", IdentifiedName, Quality);
+                if (Identified || Quality == eItemQuality.normal)
+                return IdentifiedName;
+            else
+                return string.Format("{0} (not identified)", UnidentifiedName);
         }
 
         public string UnidentifiedName
@@ -151,11 +154,11 @@ namespace Serpen.Diablo
             }
         }
 
-        public eItemClass ItemClass
+        public eItemType ItemClass
         {
             get
             {
-                return (eItemClass)buffer[0x8 + prefix];
+                return (eItemType)buffer[0x8 + prefix];
             }
         }
 
@@ -199,11 +202,11 @@ namespace Serpen.Diablo
         {
             get
             {
-                return (uint)(System.BitConverter.ToUInt32(buffer, 0xC4 + prefix) / (ItemClass == eItemClass.Gold ? 1 : 4));
+                return (uint)(System.BitConverter.ToUInt32(buffer, 0xC4 + prefix) / (ItemClass == eItemType.Gold ? 1 : 4));
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value * (ItemClass == eItemClass.Gold ? 1 : 4));
+                byte[] temp = System.BitConverter.GetBytes(value * (ItemClass == eItemType.Gold ? 1 : 4));
                 Array.Copy(temp, 0, buffer, 0xC4 + prefix, temp.Length);
             }
         }
@@ -212,37 +215,28 @@ namespace Serpen.Diablo
         {
             get
             {
-                return (uint)(System.BitConverter.ToUInt32(buffer, 0xC8 + prefix) / (ItemClass == eItemClass.Gold ? 1 : 4));
+                return (uint)(System.BitConverter.ToUInt32(buffer, 0xC8 + prefix) / (ItemClass == eItemType.Gold ? 1 : 4));
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value * (ItemClass == eItemClass.Gold ? 1 : 4));
+                byte[] temp = System.BitConverter.GetBytes(value * (ItemClass == eItemType.Gold ? 1 : 4));
                 Array.Copy(temp, 0, buffer, 0xC8 + prefix, temp.Length);
             }
         }
 
-        public uint DamageBase
+        public FromTo Damage
         {
             get
             {
-                return System.BitConverter.ToUInt32(buffer, 0xCC + prefix);
+                return new FromTo(
+                    BitConverter.ToInt32(buffer, 0xCC + prefix),
+                    BitConverter.ToInt32(buffer, 0xD0 + prefix));
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                byte[] temp = System.BitConverter.GetBytes(value.From);
                 Array.Copy(temp, 0, buffer, 0xCC + prefix, temp.Length);
-            }
-        }
-
-        public uint DamageMax
-        {
-            get
-            {
-                return System.BitConverter.ToUInt32(buffer, 0xD0 + prefix);
-            }
-            set
-            {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                temp = System.BitConverter.GetBytes(value.To);
                 Array.Copy(temp, 0, buffer, 0xD0 + prefix, temp.Length);
             }
         }
@@ -273,7 +267,7 @@ namespace Serpen.Diablo
             }
         }
 
-        eItemCode ItemCode
+        public eItemCode ItemCode
         {
             get
             {
@@ -299,54 +293,38 @@ namespace Serpen.Diablo
             }
         }
 
-        public int Charges
+        public FromTo Charges
         {
             get
             {
-                return System.BitConverter.ToInt32(buffer, 0xE4 + prefix);
+                return new FromTo(
+                    BitConverter.ToInt32(buffer, 0xE4 + prefix),
+                    BitConverter.ToInt32(buffer, 0xE8 + prefix),
+                    '/');
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                byte[] temp = System.BitConverter.GetBytes(value.From);
                 Array.Copy(temp, 0, buffer, 0xE4 + prefix, temp.Length);
-            }
-        }
-
-        public int ChargesMax
-        {
-            get
-            {
-                return System.BitConverter.ToInt32(buffer, 0xE8 + prefix);
-            }
-            set
-            {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                temp = System.BitConverter.GetBytes(value.To);
                 Array.Copy(temp, 0, buffer, 0xE8 + prefix, temp.Length);
             }
         }
 
-        public int Durability
+        public FromTo Durability
         {
             get
             {
-                return System.BitConverter.ToInt32(buffer, 0xEC + prefix);
+                return new FromTo(
+                    System.BitConverter.ToInt32(buffer, 0xEC + prefix),
+                    System.BitConverter.ToInt32(buffer, 0xF0 + prefix),
+                    '/');
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                byte[] temp = System.BitConverter.GetBytes(value.From);
                 Array.Copy(temp, 0, buffer, 0xEC + prefix, temp.Length);
-            }
-        }
-
-        public int DurabilityMax
-        {
-            get
-            {
-                return System.BitConverter.ToInt32(buffer, 0xF0 + prefix);
-            }
-            set
-            {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                temp = System.BitConverter.GetBytes(value.From);
                 Array.Copy(temp, 0, buffer, 0xF0 + prefix, temp.Length);
             }
         }
@@ -450,7 +428,8 @@ namespace Serpen.Diablo
             }
         }
 
-        public void SetResistAll (byte val) {
+        public void SetResistAll(byte val)
+        {
             ResistFire = ResistLightning = ResistMagic = val;
         }
 
@@ -585,55 +564,42 @@ namespace Serpen.Diablo
             }
         }
 
-        public uint FireDamageBase
+        public FromTo FireDamage
         {
             get
             {
-                return System.BitConverter.ToUInt32(buffer, 0x138 + prefix);
+                return new FromTo(
+                    BitConverter.ToInt32(buffer, 0x138 + prefix),
+                    BitConverter.ToInt32(buffer, 0x13c + prefix),
+                    '-');
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                byte[] temp = System.BitConverter.GetBytes(value.From);
                 Array.Copy(temp, 0, buffer, 0x138 + prefix, temp.Length);
-            }
-        }
-        public uint FireDamageMax
-        {
-            get
-            {
-                return System.BitConverter.ToUInt32(buffer, 0x13c + prefix);
-            }
-            set
-            {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                temp = System.BitConverter.GetBytes(value.To);
                 Array.Copy(temp, 0, buffer, 0x13C + prefix, temp.Length);
             }
         }
 
-        public uint LightningDamageBase
+        public FromTo LightningDamage
         {
             get
             {
-                return System.BitConverter.ToUInt32(buffer, 0x140 + prefix);
+                return new FromTo(
+                    BitConverter.ToInt32(buffer, 0x140 + prefix),
+                    BitConverter.ToInt32(buffer, 0x140 + 4 + prefix),
+                    '-');
             }
             set
             {
-                byte[] temp = System.BitConverter.GetBytes(value);
+                byte[] temp = System.BitConverter.GetBytes(value.From);
                 Array.Copy(temp, 0, buffer, 0x140 + prefix, temp.Length);
+                temp = System.BitConverter.GetBytes(value.To);
+                Array.Copy(temp, 0, buffer, 0x140 + 4 + prefix, temp.Length);
             }
         }
-        public uint LightningDamageMax
-        {
-            get
-            {
-                return System.BitConverter.ToUInt32(buffer, 0x144 + prefix);
-            }
-            set
-            {
-                byte[] temp = System.BitConverter.GetBytes(value);
-                Array.Copy(temp, 0, buffer, 0x144 + prefix, temp.Length);
-            }
-        }
+
 
         public byte RequireStr
         {
@@ -669,7 +635,7 @@ namespace Serpen.Diablo
             }
         }
 
-        public bool Equippable
+        bool Equippable
         {
             get
             {

@@ -30,7 +30,7 @@
 							<PropertyName>ItemClass</PropertyName>
 						</TableColumnItem>
 						<TableColumnItem>
-							<PropertyName>IdentifiedName</PropertyName>
+							<ScriptBlock>$psitem.ToString()</ScriptBlock>
 						</TableColumnItem>
 						<TableColumnItem>
 							<PropertyName>Quality</PropertyName>
