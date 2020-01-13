@@ -61,11 +61,11 @@ function Connect-D1Session {
     $Version = Get-D1Version -MemoryHandle $MemHandle
 
     $D1Session = New-Object PSObject -Property ([ordered]@{Process = $proc; Version = $Version.Name; ProcessMemoryHandle = $MemHandle; Offsets = New-Object psobject })
-    $D1Session.Offsets | Add-Member -NotePropertyName Base -NotePropertyValue ($Version.base -as [int64])
-    foreach ($of in ($Version | Get-Member -MemberType NoteProperty | Where-Object Name -NotIn ('vername', 'version', 'Name', 'filehash', 'base', 'filepv', 'filefv', 'ITEM_STRUCT_SIZE'))) {
+    $D1Session.Offsets | Add-Member -NotePropertyName Character -NotePropertyValue ($Version.Character -as [int64])
+    foreach ($of in ($Version | Get-Member -MemberType NoteProperty | Where-Object Name -NotIn ('vername', 'version', 'Name',  'character', 'filehash', 'filepv', 'filefv', 'ITEM_STRUCT_SIZE'))) {
         [int64]$ofval = 0
         if ([int64]::TryParse($Version."$($of.name)", [ref]$ofval)) {
-            $ofval += $D1Session.Offsets.Base 
+            $ofval += $D1Session.Offsets.Character 
         }
         else {
             $ofval = $null
@@ -114,7 +114,7 @@ function Get-D1Players {
     Write-Verbose "Found $playersCount Players"
     
     for ([int]$i = 0; $i -lt $playersCount; $i++) {
-        $buffer = ReadMemoryDirect -D1Session $D1Session -OffsetAddress ($D1Session.Offsets.Character+280) -Length $PLAYERNAME_LENGTH -n $i
+        $buffer = ReadMemoryDirect -D1Session $D1Session -OffsetAddress ($D1Session.Offsets.Character+280+0x29) -Length $PLAYERNAME_LENGTH -n $i
         
         New-Object PSobject -Property @{'Index' = ($i + 1); 'Name' = (ConvertFrom-D1String $Buffer 0 $PLAYERNAME_LENGTH) }
     }
@@ -260,7 +260,7 @@ function Set-D1LevelUpPoints {
     )
     Test-D1ValidSession -D1Session $D1Session
 
-    WriteMemoryDirect -D1Session $D1Session -OffsetType Base -Data $Points -Index 348
+    WriteMemoryDirect -D1Session $D1Session -OffsetType Character -Data $Points -Index (348+41)
 
 }
 
@@ -272,6 +272,8 @@ function Get-D1Spell {
         [Serpen.Diablo.eSpell[]]$Spell,
         $D1Session = $Global:D1Session
     )
+
+    Test-D1ValidSession $D1Session
     
     #if ($Spell -eq "*" -or $Spell -eq $null) {$Spell = $SPELL_NAMES}
     if ($Spell -eq "All" -or ($Spell.Length) -eq 0) { $Spell = [enum]::GetValues([Serpen.Diablo.eSpell]) | Where-Object { $_ -gt 0 } }
@@ -829,10 +831,10 @@ function Test-D1ValidSession {
         $D1Session = $Global:D1Session
     )
     if (!$D1Session) {
-        throw 'No valid DiabloSession'
+        throw 'No DiabloSession'
     }
 
-    if ($D1Session.Offsets.Base -le 0) {
+    if ($D1Session.Offsets.Character -le 0) {
         throw 'No valid DiabloSession'
     }
 }

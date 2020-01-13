@@ -50,6 +50,13 @@ namespace Serpen.Diablo
             }
             catch { throw new ArgumentException(); }
         }
+
+        public static FromTo operator * (FromTo ft, int number) {
+            return new FromTo(ft.From * number, ft.To * number);
+        }
+        public static FromTo operator + (FromTo ft, int number) {
+            return new FromTo(ft.From + number, ft.To + number);
+        }
     }
 
     public enum eSpell : sbyte { All = -2, None = 0, Firebolt = 1, Healing, Lightning, Flash, Identify, Firewall, TownPortal, StoneCurse, Infrasion, Phasing, ManaShield, Fireball, Guardian, ChainLightning, FlameWave, DoomSerpents, BloodRitual, Nova, Invisiblity, Inferno, Golem, BloodBoil, Teleport, Apocalypse, Etheralize, ItemRepair, StaffRecharge, TrapDisarm, Elemental, Chargedbolt, Holybolt, Resurrect, Telekinesis, HealOther, BloodStar, BoneSpirit }

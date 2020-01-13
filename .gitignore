@@ -1,4 +1,5 @@
 cs/.vs
+cs/.vscode
 cs/*.csproj
 cs/bin
 cs/obj
