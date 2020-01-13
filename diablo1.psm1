@@ -289,8 +289,8 @@ function Get-D1Spell {
         $returnobject.Spell = $spellSingle
         $returnobject.Index = $intspell
         $returnobject.Spellbook = "Page $($SPELLBOX_X[$intspell]).$($SPELLBOX_Y[$intspell])"
-        #$returnobject.Enabled = ($spellflagsInt -band (1 -shl $intspell)) -gt 0
-        $returnobject.Enabled = $spellflags -bor [math]::Pow(2, $Spell)
+        $returnobject.Enabled = ($spellflagsInt -band (1 -shl $intspell)) -gt 0
+        #$returnobject.Enabled = $spellflags -bor [math]::Pow(2, $Spell)
         $returnobject.Level = $spellLevel
 
         $returnobject
@@ -336,6 +336,7 @@ function Set-D1Spell {
 
 #checked
 function Get-D1Quests {
+    [CmdLetBinding()]
     #[outputType('Serpen.Diablo.Quest')]
     param (
         $D1Session = $Global:D1Session
@@ -343,17 +344,16 @@ function Get-D1Quests {
     $buffer = ReadMemoryDirect -D1Session $D1Session -OffsetType Quest -Length (0x18 * 16)
 
     for ([int]$i = 0; $i -lt 16; $i++) {
-        # New-Object PSobject -Property ([ordered]@{
-        #     State=$QUEST_STATE[$buffer[2+$i*0x18]]; 
-        #     Name=$QUEST_ENUM[$buffer[1+$i*0x18]]; 
-        #     DungeonLevel=$buffer[$i*0x18]; 
-        #     QuestLevel=$buffer[12+$i*0x18]})
-
         $properties = GenerateHashTableProperties
         $properties.Add('State', $QUEST_STATE[$buffer[$i * 0x18 + 2]]) 
         $properties.Add('Name', $QUEST_ENUM[$buffer[$i * 0x18 + 1]]) 
         $properties.Add('DungeonLevel', $buffer[$i * 0x18]) 
         $properties.Add('QuestLevel', $buffer[$i * 0x18 + 12]) 
+        
+        if ($PSCmdlet.MyInvocation.BoundParameters.ContainsKey("Verbose")) {
+            $Properties.Add('_offset', $i * 0x18 + 4)
+            $Properties.Add('_buffer', $buffer)
+        }
 
         $returnobject = New-Object PSobject -Property $properties
         $returnobject.psobject.TypeNames.Insert(0, 'Serpen.Diablo.Quest')
@@ -449,7 +449,7 @@ function Get-D1Monsters {
     }
 }
 
-function show-D1CompleteMap {
+function Complete-D1AutoMap {
     param($D1Session = $Global:D1Session)
 
     $buffer = New-Object byte[] 0x640
@@ -499,7 +499,6 @@ function ConvertTo-D1Item {
     }
     else {
         $buffer = [array]::CreateInstance([byte], 0x170)
-        [int]$read = 0
         $buffer = ReadMemoryDirect -OffsetAddress $Offset -D1Session $D1Session -Length 0x170
         #[Serpen.Wrapper.ProcessMemory]::ReadProcessMemory($D1Session.ProcessMemoryHandle, $Offset, $buffer, $buffer.length, [ref]$read)
         $object = New-Object Serpen.Diablo.Item -ArgumentList @(, $buffer)
@@ -880,7 +879,10 @@ function ReadMemoryDirect {
 
 function WriteMemoryDirect {
     param (
-        [Parameter(Mandatory = $true)][string]$OffsetType,
+        [Parameter(ParameterSetName = 'OffsetName', Mandatory = $true)]
+        [string]$OffsetType,
+        [Parameter(ParameterSetName = 'OffsetAddress', Mandatory = $true)]
+        [int64]$OffsetAddress,
         [uint16][Alias('n')]$Index = 0,
         [Parameter(Mandatory = $true)][byte[]]$Data,
         $D1Session = $Global:D1Session
@@ -888,9 +890,19 @@ function WriteMemoryDirect {
     
     Test-D1ValidSession -D1Session $D1Session
     
-    [int64]$offset = $D1Session.Offsets.$OffsetType + $Index
+    [int64]$offset = 0
+    if ($PSCmdlet.ParameterSetName -eq 'OffsetName') {
+        $offset = $D1Session.Offsets.$OffsetType + $Index
 
-    Write-Warning $offset
+        if ($offset -le 0) {
+            throw "$OffsetType not supported in $($D1Session.Version)"
+        }
+    }
+    else {
+        $offset = $OffsetAddress + $Index
+    }
+
+    #Write-Warning "$offset [0x$($offset.ToString('x'))]"
     
     if ($offset -le 0) {
         throw "$OffsetType not supported in $($D1Session.Version)"
@@ -905,24 +917,29 @@ function WriteMemoryDirect {
     } 
 }
 
-#checked
 <#
 .EXAMPLE
-    New-D1TownPortal -X 55 -Y 43 -Dungeon 3 -DungeonType 1 -Quest
+    New-D1TownPortal -X 20 -Y 50 -Dungeon 3 -DungeonType 1 -Quest
     Townportal to hidden maze quest level
 .EXAMPLE
-    New-D1TownPortal -X 55 -Y 43 -Dungeon 4 -DungeonType 3 -Quest
-    Poisend Water 
+    New-D1TownPortal -X 33 -Y 81 -Dungeon 4 -DungeonType 3 -Quest
+    Poisoned Water Supply
 .EXAMPLE
-    New-D1TownPortal -X 55 -Y 43 -Dungeon 5 -DungeonType 1 -Quest
+    New-D1TownPortal -X 35 -Y 29 -Dungeon 5 -DungeonType 1 -Quest
     Lazarus
+.EXAMPLE
+    New-D1TownPortal -X 35 -Y 29 -Dungeon 6 -DungeonType 2 -Quest
+    Lazarus
+.EXAMPLE
+    New-D1TownPortal -X 63 -Y 72 -Dungeon 16
+    Townportal to Diablo
 #>
 function New-D1TownPortal {
     param (
         [Parameter(Mandatory = $true)][byte][ValidateRange(0, 16)]$Dungeon,
-        [Parameter(Mandatory = $true)][byte]$X,
-        [Parameter(Mandatory = $true)][byte]$Y,
-        [sbyte]$DungeonType = -1,
+        [Parameter(Mandatory = $true)][byte][ValidateRange(0, 111)]$X,
+        [Parameter(Mandatory = $true)][byte][ValidateRange(0, 111)]$Y,
+        [ValidateRange(-1, 4)][sbyte]$DungeonType = -1,
         [switch]$Quest,
         $D1Session = $Global:D1Session
     )
@@ -963,6 +980,28 @@ function New-D1TownPortal {
     }
 
     WriteMemoryDirect -D1Session $D1Session -OffsetType tp -data $buffer
+}
+
+function Set-D1Hotkey {
+    param (
+        [Parameter(Mandatory = $true)][byte][ValidateRange(5, 8)]$Hotkey,
+        [Parameter(Mandatory = $true)][Serpen.Diablo.eSpell]$Spell,
+        [Parameter(Mandatory = $true)][ValidateSet('Skill','Book','Scroll','Staff')]$SpellType,
+        $D1Session = $Global:D1Session
+    )
+    
+    [byte]$SpellTypeInt = 0
+    switch ($SpellType) {
+        Skill {$SpellTypeInt = 0}
+        Book {$SpellTypeInt = 1}
+        Scroll {$SpellTypeInt = 2}
+        Staff {$SpellTypeInt = 3}
+    }
+
+    
+
+    WriteMemoryDirect -OffsetAddress ($D1Session.Offsets.Character + 293) -Index (($Hotkey-5)*4) -D1Session $D1Session -Data ([System.BitConverter]::GetBytes($Spell.value__ -as [int]))
+    WriteMemoryDirect -OffsetAddress ($D1Session.Offsets.Character + 293+16) -Index ($Hotkey-5) -D1Session $D1Session -Data $SpellTypeInt
 }
 
 function Enable-D1TownPortal {
